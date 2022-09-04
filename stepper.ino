@@ -1,10 +1,6 @@
 #include "stepper.h"
 #include "driver_unit.h"
 
-StepperState* stepper1;
-StepperState* stepper2;
-StepperState* stepper3;
-StepperState* stepper4;
 
 // The first of each of these numbers depends on the DIP switch settings (steps/rev)
 // The second depends on the units (1 revolution=360 deg, X mm, etc..)
@@ -25,10 +21,23 @@ StepperState* stepper4;
 
 #define SWEEP_TIME_SEC 5.0
 
+
+// These are shared between legacy.ino and us
+unsigned long lastDebounceTime1 = 0; 
+
+StepperState* stepper1;
+StepperState* stepper2;
+StepperState* stepper3;
+StepperState* stepper4;
+
+int sweeping=0;
+
 void setup() {
 #if DEBUG_STEPPER
     Serial.begin(9600); 
 #endif
+
+    legacy_setup(); // Call legacy code. Sets pin directions, mainly.
 
     stepper1 = new StepperState(DRIVER1_PULSE,DRIVER1_DIR);
     stepper2 = new StepperState(DRIVER2_PULSE,DRIVER2_DIR); 
@@ -40,8 +49,8 @@ void setup() {
     //stepper3->prepare_move( int(STEPPER3_START*STEPPER3_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
     //stepper4->prepare_move( int(STEPPER4_START*STEPPER4_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
 
-    stepper1->start_move();
-    stepper2->start_move();
+    //stepper1->start_move();
+    //stepper2->start_move();
     //stepper3->start_move();
     //stepper4->start_move();
 }
@@ -51,4 +60,10 @@ void loop() {
       stepper2->do_update();
       //stepper3->do_update();
       //stepper4->do_update();
+
+      legacy_loop(); // main loop from old front panel
+
+      if (lastDebounceTime1>3000) { //Hold for 3 seconds 
+        Serial.println("HOLD1");
+      };
 }

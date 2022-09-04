@@ -25,19 +25,20 @@ public:
   void debug_output(unsigned long msg);
 
 	// All durations in usec
-	signed int start_pos_steps;
-	signed int end_pos_steps;
 	unsigned long int step_interval_us;
 	int mypin_pulse;
 	int mypin_dir;
   signed int mydir; // -1 or +1
-  //unsigned long steps_per_rev;  // defined by motor/driver DIPs. Not using.
+  unsigned int sweeping;
+  signed long int pos_current;
+  signed int mypos_end;
   
 private:
 	long int pulse_off_time;
 	long int pulse_on_time;
-	signed long int pos_current;
-  signed int mypos_end;
+//  signed int start_pos_steps;
+//  signed int end_pos_steps;
+  //unsigned long steps_per_rev;  // defined by motor/driver DIPs. Not using.
 };
 
 	//long int step_size;
