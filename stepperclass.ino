@@ -1,7 +1,7 @@
 //#include "stepper.h" // Apparently implicitly included ??
 #include "limits.h" // for LONG_MAX
 
-#define DEBUG_STEPPER 1
+#define DEBUG_STEPPER 0
 
 // StepperState implementation. Constructors just inits.
 StepperState::StepperState(int pin_pulse, int pin_dir) {
@@ -15,6 +15,8 @@ StepperState::StepperState(int pin_pulse, int pin_dir) {
   
   pinMode(mypin_pulse,OUTPUT);
   pinMode(mypin_dir,OUTPUT);
+
+  sweeping=0;
 }
 
 // Save the endpoint and the step interval, set the direction pin 
@@ -44,6 +46,8 @@ void StepperState::prepare_move(signed int pos_end, unsigned long move_duration)
 // Arm the movement by setting the first "on" time
 void StepperState::start_move() {
   pulse_on_time = micros(); // arm first movement
+  sweeping=1;
+  debug_output(0);
 };
 
 void StepperState::debug_output(unsigned long msg) {
@@ -82,6 +86,7 @@ void StepperState::do_update() {
 			pulse_on_time = micros() + step_interval_us; // Keep steppin'
 		} else { // done, at destination
       pulse_on_time = LONG_MAX; // STOP
+      sweeping=0;
       debug_output(2);
 		}
 	}

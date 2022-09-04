@@ -21,11 +21,9 @@ int dir1Current;
 int dir2Stable = LOW;
 int dir2Flicker = LOW;
 int dir2Current;
-unsigned long lastDebounceTime2 = 0;      
 int dir3Stable = LOW;
 int dir3Flicker = LOW;
 int dir3Current;
-unsigned long lastDebounceTime3 = 0;
 /////Limit switch debounce function variables/////
 int lim1Current;
 int lim1Stable = LOW;
@@ -63,8 +61,6 @@ void legacy_setup(){
   pinMode(limit1, INPUT);       // Set pin# 17 as INPUT - imit switch input, axis1
   pinMode(limit2, INPUT);       // Set pin# 18 as INPUT - limit switch input, axis2
   pinMode(limit2, INPUT);       // Set pin# 19 as INPUT - limit switch input, axis3 
-
-	lastDebounceTime1 = 0;   
 }
 
 void legacy_loop() {
