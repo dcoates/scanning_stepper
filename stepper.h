@@ -16,11 +16,14 @@ class StepperState
 {
 public:
 	StepperState(int pin_go, int pin_dir);
+  void do_update(); // state machine to run every loop
 
   void prepare_move(signed int pos_end, unsigned long int move_duration);
   //void prepare_move(signed int pos_end, unsigned long int step_interval_us);
   void start_move();
-  void do_update();
+  
+  void stop_pulse(); // Immediately set pulse low
+  void stop_move();  // Stop and cancel future movements.
 
   void debug_output(unsigned long msg);
 

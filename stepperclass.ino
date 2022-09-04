@@ -1,7 +1,7 @@
 //#include "stepper.h" // Apparently implicitly included ??
 #include "limits.h" // for LONG_MAX
 
-#define DEBUG_STEPPER 0
+#define DEBUG_STEPPER 1
 
 // StepperState implementation. Constructors just inits.
 StepperState::StepperState(int pin_pulse, int pin_dir) {
@@ -50,6 +50,18 @@ void StepperState::start_move() {
   debug_output(0);
 };
 
+void StepperState::stop_pulse() {
+    digitalWrite(mypin_pulse,LOW);
+    pulse_off_time=LONG_MAX;
+}
+
+void StepperState::stop_move() {
+  stop_pulse(); // lower step pulse now
+  pulse_on_time = LONG_MAX; // Disable future movements
+  sweeping=0;
+  debug_output(2);
+};
+
 void StepperState::debug_output(unsigned long msg) {
 #if DEBUG_STEPPER
     Serial.print(msg);  // Before was trying to pass in msg string
@@ -66,8 +78,7 @@ void StepperState::debug_output(unsigned long msg) {
 
 void StepperState::do_update() {
 	if (micros() >= pulse_off_time ) {
-		digitalWrite(mypin_pulse,LOW);
-    pulse_off_time=LONG_MAX;
+	  stop_pulse();
 	}
 
 	// Probably don't want this to execute also right after above
@@ -85,9 +96,7 @@ void StepperState::do_update() {
 		if (pos_current != mypos_end) {
 			pulse_on_time = micros() + step_interval_us; // Keep steppin'
 		} else { // done, at destination
-      pulse_on_time = LONG_MAX; // STOP
-      sweeping=0;
-      debug_output(2);
+      stop_move();
 		}
 	}
 };

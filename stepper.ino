@@ -35,26 +35,14 @@ StepperState* stepper4;
 unsigned int any_sweeping=0;
   
 void setup() {
-//#if DEBUG_STEPPER
     Serial.begin(9600); 
-//#endif
 
-    legacy_setup(); // Call legacy code. Sets pin directions, mainly.
+    legacy_setup(); // Call legacy setup code. Sets pin directions, mainly.
 
     stepper1 = new StepperState(DRIVER1_PULSE,DRIVER1_DIR);
     stepper2 = new StepperState(DRIVER2_PULSE,DRIVER2_DIR); 
     //stepper3 = new StepperState(DRIVER3_PULSE,DRIVER3_DIR); 
     //stepper4 = new StepperState(DRIVER4_PULSE,DRIVER4_DIR); 
-
-    //stepper1->prepare_move( int(STEPPER1_START*STEPPER1_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
-    //stepper2->prepare_move( int(STEPPER2_START*STEPPER2_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
-    //stepper3->prepare_move( int(STEPPER3_START*STEPPER3_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
-    //stepper4->prepare_move( int(STEPPER4_START*STEPPER4_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
-
-    //stepper1->start_move();
-    //stepper2->start_move();
-    //stepper3->start_move();
-    //stepper4->start_move();
 }
 
 void loop() {
@@ -70,25 +58,37 @@ void loop() {
 
       if (lastDebounceTime1>3000) { //Hold for 3 seconds 
         Serial.println("HOLD1");
-        //stepper1->prepare_move( int(STEPPER1_START*STEPPER1_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
-        //stepper2->prepare_move( int(STEPPER2_START*STEPPER2_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
-        //stepper1->start_move();
-        //stepper2->start_move();
-      };
-      if (lastDebounceTime2>3000) { //Hold for 3 seconds 
+        //sweep_to_start();
+      } else if (lastDebounceTime2>3000) { //Hold for 3 seconds 
         Serial.println("HOLD2");
-        //stepper1->prepare_move( int(0.0*STEPPER1_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
-        //stepper2->prepare_move( int(0.0*STEPPER2_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
-        //stepper1->start_move();
-        //stepper2->start_move();
-      };
-      if (lastDebounceTime3>3000) { //Hold for 3 seconds 
+        //sweep_to_zero();
+      } else if (lastDebounceTime3>3000) { //Hold for 3 seconds 
         Serial.println("HOLD3");
-        //stepper1->prepare_move( int(STEPPER1_STOP*STEPPER1_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
-        //stepper2->prepare_move( int(STEPPER2_STOP*STEPPER2_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
-        //stepper1->start_move();
-        //stepper2->start_move();
-      };
+        //sweep_to_stop();
+      } else {
+        // NOTHING IS HELD
+        //Serial.println("NOTHING"); 
+        ;
+      }
+}
 
+void sweep_to_start() {
+  stepper1->prepare_move( int(STEPPER1_START*STEPPER1_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
+  stepper2->prepare_move( int(STEPPER2_START*STEPPER2_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
+  stepper1->start_move();
+  stepper2->start_move();
+}
 
+void sweep_to_zero() {
+  stepper1->prepare_move( int(0.0*STEPPER1_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
+  stepper2->prepare_move( int(0.0*STEPPER2_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
+  stepper1->start_move();
+  stepper2->start_move();
+}
+
+void sweep_to_stop() {
+  stepper1->prepare_move( int(STEPPER1_END*STEPPER1_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
+  stepper2->prepare_move( int(STEPPER2_END*STEPPER2_STEPS_PER_UNIT),SWEEP_TIME_SEC*1000000.0);
+  stepper1->start_move();
+  stepper2->start_move();
 }
