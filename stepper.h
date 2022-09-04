@@ -23,7 +23,7 @@ public:
   void start_move();
   
   void stop_pulse(); // Immediately set pulse low
-  void stop_move();  // Stop and cancel future movements.
+  void stop_move(unsigned int lower_pulse);  // Stop and cancel future movements.
 
   void debug_output(unsigned long msg);
 

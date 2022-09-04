@@ -27,6 +27,7 @@ unsigned long lastDebounceTime1 = 0;
 unsigned long lastDebounceTime2 = 0; 
 unsigned long lastDebounceTime3 = 0; 
 
+// class instances for each stepper motor
 StepperState* stepper1;
 StepperState* stepper2;
 StepperState* stepper3;
@@ -66,9 +67,10 @@ void loop() {
         Serial.println("HOLD3");
         //sweep_to_stop();
       } else {
-        // NOTHING IS HELD
+        // NOTHING IS HELD : For now, stop all movements if no held buttons.
         //Serial.println("NOTHING"); 
-        ;
+			  //stepper1->stop_move(0); // 0=don't mess with the pulses, just cancel swept movement
+			  //stepper2->stop_move(0);
       }
 }
 

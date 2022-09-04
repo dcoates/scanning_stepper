@@ -55,8 +55,9 @@ void StepperState::stop_pulse() {
     pulse_off_time=LONG_MAX;
 }
 
-void StepperState::stop_move() {
-  stop_pulse(); // lower step pulse now
+void StepperState::stop_move(unsigned int lower_pulse) {
+  if (lower_pulse)
+    stop_pulse(); // lower step pulse now
   pulse_on_time = LONG_MAX; // Disable future movements
   sweeping=0;
   debug_output(2);
@@ -96,7 +97,7 @@ void StepperState::do_update() {
 		if (pos_current != mypos_end) {
 			pulse_on_time = micros() + step_interval_us; // Keep steppin'
 		} else { // done, at destination
-      stop_move();
+      stop_move(1);
 		}
 	}
 };
