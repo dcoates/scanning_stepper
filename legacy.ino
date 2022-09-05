@@ -15,15 +15,14 @@ const int DEBOUNCE_DELAY = 50;   //initially set delay to 50mS
 /////direction push button debounce function variables/////
 int dir1Stable = LOW;               
 int dir1Flicker = LOW;
-int dir1Current;
+
 
 
 int dir2Stable = LOW;
 int dir2Flicker = LOW;
-int dir2Current;
 int dir3Stable = LOW;
 int dir3Flicker = LOW;
-int dir3Current;
+
 /////Limit switch debounce function variables/////
 int lim1Current;
 int lim1Stable = LOW;

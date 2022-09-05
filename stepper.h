@@ -3,7 +3,7 @@
 #define GLOBAL_STATE_SWEEPING 2
 #define GLOBAL_STATE_TO_ZEROPOS 3
 
-#define MIN_PULSE_DUR_USEC 3 // TESTING:1SEC 3 //minimum 2.5 usec. 3 usec to be safe
+#define MIN_PULSE_DUR_USEC 5 // TESTING:1SEC 3 //minimum 2.5 usec. 3 usec to be safe
 
 #define DIP_SETTING1 xxx
 #define DIP_SETTING2
@@ -15,7 +15,7 @@
 class StepperState
 {
 public:
-	StepperState(int pin_go, int pin_dir);
+	StepperState(int num_motor, int pin_go, int pin_dir);
   void do_update(); // state machine to run every loop
 
   void prepare_move(signed int pos_end, unsigned long int move_duration);
@@ -35,6 +35,7 @@ public:
   unsigned int sweeping;
   signed long int pos_current;
   signed int mypos_end;
+  int num_motor;
   
 private:
 	long int pulse_off_time;

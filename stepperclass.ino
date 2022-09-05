@@ -4,7 +4,7 @@
 #define DEBUG_STEPPER 1
 
 // StepperState implementation. Constructors just inits.
-StepperState::StepperState(int pin_pulse, int pin_dir) {
+StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir) {
 	pos_current=0;
 	mypos_end=0;
 	pulse_on_time=LONG_MAX;
@@ -16,6 +16,7 @@ StepperState::StepperState(int pin_pulse, int pin_dir) {
   pinMode(mypin_pulse,OUTPUT);
   pinMode(mypin_dir,OUTPUT);
 
+  this->num_motor = num_motor;
   sweeping=0;
 }
 
@@ -34,20 +35,31 @@ void StepperState::prepare_move(signed int pos_end, unsigned long move_duration)
 	}
 
   // TODO: be careful about rounding here!
-  this->step_interval_us = (move_duration/total_steps);
+  if (total_steps>0)
+    this->step_interval_us = (move_duration/total_steps);
+  else
+    this->step_interval_us = 100; // Not sure what to do for 0.
 
 #if DEBUG_STEPPER
-  Serial.println(move_duration);
-  Serial.println(total_steps);
-  Serial.println(this->step_interval_us);
+  Serial.print("PREP ");
+  Serial.print(num_motor);
+  Serial.print(" ");
+  Serial.print(move_duration);
+  Serial.print(" ");
+  Serial.print(total_steps);
+  Serial.print(" ");
+  Serial.print(this->step_interval_us);
+  Serial.println(" ");
 #endif
 };
 
 // Arm the movement by setting the first "on" time
 void StepperState::start_move() {
-  pulse_on_time = micros(); // arm first movement
-  sweeping=1;
-  debug_output(0);
+  if (mypos_end != pos_current) {
+    pulse_on_time = micros(); // arm first movement
+    sweeping=1;
+    debug_output(0);
+  }
 };
 
 void StepperState::stop_pulse() {
@@ -91,7 +103,8 @@ void StepperState::do_update() {
     // Update the current position
     pos_current = pos_current + mydir; // mydir will be +1 or -1
 		pulse_off_time = micros() + MIN_PULSE_DUR_USEC;
-    debug_output(1);
+    // With each step is too noisy
+    //debug_output(1);
       
     // Decide whether to re-arm for another movement
 		if (pos_current != mypos_end) {
