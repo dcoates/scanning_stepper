@@ -1,20 +1,21 @@
 #include "stepper.h"
 #include "driver_unit.h"
+#include "digitalWriteFast.h"
 
 // The first of each of these numbers depends on the DIP switch settings (steps/rev)
 // The second depends on the units (1 revolution=360 deg, X mm, etc..)
 #define STEPPER1_STEPS_PER_UNIT (1600.0/4.0) /* Degrees. Empirical: not sure why "4" */
 #define STEPPER2_STEPS_PER_UNIT (1600.0/4.0) /* MM  TODO Check */
-#define STEPPER3_STEPS_PER_UNIT (3200.0/4.0) /* MM  TODO Check */ //DIP: 12800
+#define STEPPER3_STEPS_PER_UNIT (1600.0/4.0) /* MM  TODO Check */ //DIP: 12800
 #define STEPPER4_STEPS_PER_UNIT (4000.0/360.0) /* MM */
 
 #define STEPPER1_START -30.0
-#define STEPPER2_START -15.0
-#define STEPPER3_START -15.0
+#define STEPPER2_START 0.0
+#define STEPPER3_START -10.0
 #define STEPPER4_START
 
 #define STEPPER1_END 30.0
-#define STEPPER2_END 10.0
+#define STEPPER2_END 0.0
 #define STEPPER3_END 10.0
 #define STEPPER4_END
 
@@ -109,7 +110,7 @@ void loop() {
     } else if (((millis() - lastDebounceTime2)>BUTTON_HOLD_MS) && dir2Current && (!any_sweeping) ) { //Hold for 3 seconds 
       sweep_to_zero();
     } else if (((millis() - lastDebounceTime3)>BUTTON_HOLD_MS) && dir3Current && (!any_sweeping) ) { //Hold for 3 seconds 
-      ;//sweep_to_stop();
+      sweep_to_stop();
     } else {
       // NOTHING IS HELD : For now, stop all movements if no held buttons.
       //Serial.println("NOTHING"); 
@@ -117,16 +118,26 @@ void loop() {
       //stepper2->stop_move(0);
     }
   } else {
-    noInterrupts();
 
-    // Only move if there is a confirmed sweep happening. Prevents phantoms
-    stepper1->do_update();
-    stepper2->do_update();
-    stepper3->do_update();
-    //stepper4->do_update();
-    };
-
-    interrupts();
+    // Failsafe: touch right GO button to stop
+    if (digitalRead(m3go)==HIGH) {
+      stepper1->stop_move(1);
+      stepper2->stop_move(1);
+      stepper3->stop_move(1); 
+      Serial.println("FAILSAFE STOP");     
+    } else {
+    
+      noInterrupts();
+  
+      // Only move if there is a confirmed sweep happening. Prevents phantoms
+      stepper1->do_update();
+      stepper2->do_update();
+      stepper3->do_update();
+      //stepper4->do_update();
+      };
+  
+      interrupts();
+  };
 }
 
 void sweep_to_start() {

@@ -1,8 +1,8 @@
 //#include "stepper.h" // Apparently implicitly included ??
-#include "digitalWriteFast.h"
+
 #include "limits.h" // for LONG_MAX
 
-#define DEBUG_STEPPER 1
+#define DEBUG_STEPPER 0
 
 // StepperState implementation. Constructors just inits.
 StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir) {

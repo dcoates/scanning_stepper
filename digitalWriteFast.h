@@ -351,4 +351,3 @@ if (__builtin_constant_p(P) && __builtin_constant_p(V)) { \
 #endif
 
 #endif //__digitalWriteFast_h_
-
