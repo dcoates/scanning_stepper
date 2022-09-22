@@ -4,20 +4,22 @@
 
 // The first of each of these numbers depends on the DIP switch settings (steps/rev)
 // The second depends on the units (1 revolution=360 deg, X mm, etc..)
-#define STEPPER1_STEPS_PER_UNIT (1600.0/4.0) /* Degrees. Empirical: not sure why "4" */
-#define STEPPER2_STEPS_PER_UNIT (1600.0/4.0) /* MM  TODO Check */
-#define STEPPER3_STEPS_PER_UNIT (1600.0/4.0) /* MM  TODO Check */ //DIP: 12800
-#define STEPPER4_STEPS_PER_UNIT (4000.0/360.0) /* MM */
+#define STEPPER1_STEPS_PER_UNIT (200.0/2.0) /* Degrees. Empirical: not sure why "/4" */
+#define STEPPER2_STEPS_PER_UNIT (8000.0/4.0) /* MM  TODO Check */
+#define STEPPER3_STEPS_PER_UNIT (8000.0/4.0) /* MM  TODO Check */
+#define STEPPER4_STEPS_PER_UNIT (1600.0/4.0) /* MM */
 
-#define STEPPER1_START -30.0
-#define STEPPER2_START 0.0
-#define STEPPER3_START -10.0
+#define STEPPER1_START -65.0
+#define STEPPER2_START -3.75
+#define STEPPER3_START -1.0
 #define STEPPER4_START
 
-#define STEPPER1_END 30.0
-#define STEPPER2_END 0.0
-#define STEPPER3_END 10.0
+#define STEPPER1_END 65.0
+#define STEPPER2_END 3.75
+#define STEPPER3_END 1.0
 #define STEPPER4_END
+
+// -30 to +30 : 30.36mm
 
 #define SWEEP_TIME_SEC 3.0
 #define BUTTON_HOLD_MS 1500

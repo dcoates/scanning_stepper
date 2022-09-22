@@ -153,11 +153,11 @@ void StepperState::do_update() {
     }
 
     pulse_on_time = now;
-		digitalWrite(mypin_pulse,HIGH);
+	digitalWrite(mypin_pulse,HIGH);
     high_time = MIN_PULSE_DUR_USEC;   // So the set low will happen once
     
     // Update the current position
-	  pos_current = pos_current + mydir; // mydir will be +1 or -1
+    pos_current = pos_current + mydir; // mydir will be +1 or -1
 	  //pulse_off_time = micros() + MIN_PULSE_DUR_USEC;
    
     // With each step is too noisy
