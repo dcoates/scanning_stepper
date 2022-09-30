@@ -2,7 +2,12 @@
 
 #include "limits.h" // for LONG_MAX
 
+#include "lookup_table1.h"
+
 #define DEBUG_STEPPER 0
+
+#define CIRCULAR_DEBUG_BUFFER 1
+//set to "0" to only get first n samples, otherwise is circular buffer
 
 // StepperState implementation. Constructors just inits.
 StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir) {
@@ -19,6 +24,8 @@ StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir) {
 
   this->num_motor = num_motor;
   sweeping=0;
+
+  table_counter=0;
 }
 
 // Save the endpoint and the step interval, set the direction pin 
@@ -67,7 +74,10 @@ void StepperState::start_move() {
     high_time = MIN_PULSE_DUR_USEC; // Will set to low after this much time (minimum)
     pulse_on_time = micros(); // arm first movement: NOW!
     
-    interval_next = int(step_interval_us); // start out with theoretical interval
+    interval_next = int( pgm_read_byte_near(table1+0) );
+    table_counter=1;
+    
+    //interval_next = int(step_interval_us); // start out with theoretical interval
     error=0.0;
     
     sweeping=1;
@@ -101,9 +111,11 @@ void StepperState::debug_output(unsigned long msg) {
     Serial.print(" ");
     Serial.print(pos_current);
     Serial.print(" ");
-    Serial.print(mypos_end);
+    Serial.print(mypos_end);S
     Serial.print(" ");
     Serial.println(step_interval_us);
+    Serial.print(" ");
+    Serial.println(table_counter);
 }
 #else
   void StepperState::debug_output(unsigned long msg) {}
@@ -136,20 +148,30 @@ void StepperState::do_update() {
 	// If it's too fast, that will be a problem (not enough of a duty cycle)
 	// For now, assume that step_interval_us is fairly large, >> 5us or so
 
-	else if (elapsed > interval_next ) {
+	else if (elapsed > (interval_next) ) {
 
-    error += elapsed - step_interval_us;
+    unsigned long table_interval = pgm_read_byte_near(table1 + table_counter);
+    table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
+    table_counter++;
 
-    if (( step_interval_us - error ) < 0 )
-      interval_next = 0;
+    error = elapsed - interval_next; //step_interval_us; // don't accumulate errors, just most recent
+
+    if (( table_interval - error ) < 0 )
+      interval_next = 20;
     else
-      interval_next = int( step_interval_us - error );
-
+      // interval_next = int( step_interval_us - error );
+      interval_next = table_interval - error;
+      
     if (num_motor == 1) {
+#if (!CIRCULAR_DEBUG_BUFFER)
       if (step_trace_counter<TRACE_BUF_SIZE) {
-        step_trace[step_trace_counter%TRACE_BUF_SIZE] = elapsed;
+#endif
+        step_trace[step_trace_counter%TRACE_BUF_SIZE] = int(table_interval);
+        //step_trace[(step_trace_counter+1)%TRACE_BUF_SIZE] = interval_next;
+#if (!CIRCULAR_DEBUG_BUFFER)
       }
-      step_trace_counter++;
+#endif
+      step_trace_counter+=1;
     }
 
     pulse_on_time = now;

@@ -9,14 +9,14 @@
 #define STEPPER3_STEPS_PER_UNIT (8000.0/4.0) /* MM  TODO Check */
 #define STEPPER4_STEPS_PER_UNIT (1600.0/4.0) /* MM */
 
-#define STEPPER1_START -65.0
-#define STEPPER2_START -3.75
-#define STEPPER3_START -1.0
+#define STEPPER1_START (-35+13) //-65.0 // -65.0
+#define STEPPER2_START 0 * -0.8
+#define STEPPER3_START 0 * -1.0
 #define STEPPER4_START
 
-#define STEPPER1_END 65.0
-#define STEPPER2_END 3.75
-#define STEPPER3_END 1.0
+#define STEPPER1_END (35 + 13)
+#define STEPPER2_END 0 * 0.8
+#define STEPPER3_END 0 * 1.0
 #define STEPPER4_END
 
 // -30 to +30 : 30.36mm
@@ -40,13 +40,15 @@ Stepper2* stepper2;
 StepperState* stepper3;
 StepperState* stepper4;
 
-#define TRACE_BUF_SIZE 256
+// For debugging:
+#define TRACE_BUF_SIZE 64
 unsigned int any_sweeping=0;
 unsigned int step_trace_counter=0;
 unsigned int step_trace[TRACE_BUF_SIZE];
 unsigned long bad_now;
 unsigned long bad_elapsed;
 unsigned long bad_potime;
+
 unsigned long sweep_start_time;
 unsigned long sweep_end_time;
 
@@ -87,6 +89,8 @@ void loop() {
           float sum=0;
           for (n=0; n<TRACE_BUF_SIZE; n++) {
             sum += step_trace[n];
+            Serial.print(n);
+            Serial.print(": ");            
             Serial.print(step_trace[n]);
             if ( (n%8)==0) 
               Serial.println(" ");
@@ -95,13 +99,17 @@ void loop() {
           }
           Serial.print(" AVG: " );
           Serial.println(sum/TRACE_BUF_SIZE);
+          Serial.print("Count: " );
+          Serial.println(stepper1->table_counter);
           Serial.print("BAD now: ");
           Serial.println(bad_now);
           Serial.println(bad_elapsed);
           Serial.println(bad_potime);          
-          Serial.print("Sweep: ");
+          Serial.print("Sweep times: ");
           Serial.println(sweep_start_time);
           Serial.println(sweep_end_time);
+          Serial.print("Sweep elapsed: ");
+          Serial.println(sweep_end_time-sweep_start_time);
         }
       }
   

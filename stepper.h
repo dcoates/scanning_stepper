@@ -31,6 +31,8 @@ public:
   virtual void writePulseHigh(boolean)=0;
 
   unsigned int sweeping;
+
+  word table_counter;
   
 private:
 	// All durations in usec
