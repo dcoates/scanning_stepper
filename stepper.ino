@@ -5,18 +5,24 @@
 // The first of each of these numbers depends on the DIP switch settings (steps/rev)
 // The second depends on the units (1 revolution=360 deg, X mm, etc..)
 #define STEPPER1_STEPS_PER_UNIT (200.0/2.0) /* Degrees. Empirical: not sure why "/4" */
-#define STEPPER2_STEPS_PER_UNIT (8000.0/4.0) /* MM  TODO Check */
-#define STEPPER3_STEPS_PER_UNIT (8000.0/4.0) /* MM  TODO Check */
+#define STEPPER2_STEPS_PER_UNIT 1
+// Old stepper2: (8000.0/4.0)  
+#define STEPPER3_STEPS_PER_UNIT 1
+// Old stepper3 DIP(8000.0/4.0)
 #define STEPPER4_STEPS_PER_UNIT (1600.0/4.0) /* MM */
 
+// Zero point for Stepper1 is at 1300 steps away from "0" (due to non-linear scissors)
+// Zero point for Stepper2?
+// Zero point for Stepper3 is zero
+ 
 #define STEPPER1_START (-35+13) //-65.0 // -65.0
-#define STEPPER2_START 0 * -0.8
-#define STEPPER3_START 0 * -1.0
+#define STEPPER2_START -3200
+#define STEPPER3_START -2000
 #define STEPPER4_START
 
 #define STEPPER1_END (35 + 13)
-#define STEPPER2_END 0 * 0.8
-#define STEPPER3_END 0 * 1.0
+#define STEPPER2_END 3200
+#define STEPPER3_END 2000
 #define STEPPER4_END
 
 // -30 to +30 : 30.36mm
@@ -35,22 +41,26 @@ int dir2Current;
 int dir3Current;
 
 // class instances for each stepper motor
-Stepper1* stepper1;
-Stepper2* stepper2;
-StepperState* stepper3;
-StepperState* stepper4;
+StepperLUT* stepper1;
+StepperLUT* stepper2;
+StepperConstant* stepper3;
 
-// For debugging:
+// One motor instance will write into the trace buffer:
 #define TRACE_BUF_SIZE 64
 unsigned int any_sweeping=0;
 unsigned int step_trace_counter=0;
 unsigned int step_trace[TRACE_BUF_SIZE];
+
+// all 3 instances overwrite this global (TODO fix):
+unsigned long sweep_start_time;
+unsigned long sweep_end_time;
+
+// All 3 write into this, to indicate extra-long intervals
+// Suggestive of a timing error
 unsigned long bad_now;
 unsigned long bad_elapsed;
 unsigned long bad_potime;
 
-unsigned long sweep_start_time;
-unsigned long sweep_end_time;
 
 void setup() {
 
@@ -59,10 +69,43 @@ void setup() {
     
     legacy_setup(); // Call legacy setup code. Sets pin directions, mainly.
 
-    stepper1 = new Stepper1(1, DRIVER1_PULSE,DRIVER1_DIR);
-    stepper2 = new Stepper2(2, DRIVER2_PULSE,DRIVER2_DIR); 
-    stepper3 = new Stepper2(3, DRIVER3_PULSE,DRIVER3_DIR); 
-    //stepper4 = new StepperState(4, DRIVER4_PULSE,DRIVER4_DIR); 
+    stepper1 = new StepperLUT(1, DRIVER1_PULSE,DRIVER1_DIR);
+    stepper2 = new StepperLUT(2, DRIVER2_PULSE,DRIVER2_DIR); 
+    stepper3 = new StepperConstant(3, DRIVER3_PULSE,DRIVER3_DIR); 
+}
+
+void debug_blast() {
+  int n;
+  Serial.println(step_trace_counter);
+  float sum=0;
+  for (n=0; n<TRACE_BUF_SIZE; n++) {
+    sum += step_trace[n];
+    Serial.print(n);
+    Serial.print(": ");            
+    Serial.print(step_trace[n]);
+    if ( (n%8)==0) 
+      Serial.println(" ");
+    else
+      Serial.println(" ");
+  }
+  Serial.print(" AVG: " );
+  Serial.println(sum/TRACE_BUF_SIZE);
+  Serial.print("Count 1T: " );
+  Serial.println(stepper1->table_counter);
+  Serial.print("Count 2: " );
+  Serial.println(stepper2->steps_completed);
+  Serial.print("Count 3: " );
+  Serial.println(stepper3->steps_completed);
+  Serial.print("Sweep: ");
+  Serial.println(sweep_start_time);
+  Serial.println(sweep_end_time);
+  Serial.print("Sweep elapsed: ");
+  Serial.println(sweep_end_time-sweep_start_time);
+  Serial.print("BAD now: ");
+  Serial.println(bad_now);
+  Serial.println(bad_elapsed);
+  Serial.println(bad_potime);          
+
 }
 
 void loop() {
@@ -84,32 +127,7 @@ void loop() {
         } else if (incomingByte=='0') {
           sweep_to_zero();
         } else if (incomingByte=='?') {
-          int n;
-          Serial.println(step_trace_counter);
-          float sum=0;
-          for (n=0; n<TRACE_BUF_SIZE; n++) {
-            sum += step_trace[n];
-            Serial.print(n);
-            Serial.print(": ");            
-            Serial.print(step_trace[n]);
-            if ( (n%8)==0) 
-              Serial.println(" ");
-            else
-              Serial.println(" ");
-          }
-          Serial.print(" AVG: " );
-          Serial.println(sum/TRACE_BUF_SIZE);
-          Serial.print("Count: " );
-          Serial.println(stepper1->table_counter);
-          Serial.print("BAD now: ");
-          Serial.println(bad_now);
-          Serial.println(bad_elapsed);
-          Serial.println(bad_potime);          
-          Serial.print("Sweep times: ");
-          Serial.println(sweep_start_time);
-          Serial.println(sweep_end_time);
-          Serial.print("Sweep elapsed: ");
-          Serial.println(sweep_end_time-sweep_start_time);
+          debug_blast();
         }
       }
   

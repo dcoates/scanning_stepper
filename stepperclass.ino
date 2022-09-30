@@ -3,19 +3,18 @@
 #include "limits.h" // for LONG_MAX
 
 #include "lookup_table1.h"
+uint8_t* luts[]={table1,table1,table1};
 
 #define DEBUG_STEPPER 0
-
-#define CIRCULAR_DEBUG_BUFFER 1
-//set to "0" to only get first n samples, otherwise is circular buffer
+#define DEBUG_MOTOR 3 // Which motor to save time intervals for
+#define CIRCULAR_DEBUG_BUFFER 1  //set to "0" to only get first n samples, otherwise is circular buffer (to observe last samples)
 
 // StepperState implementation. Constructors just inits.
 StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir) {
 	pos_current=0;
 	mypos_end=0;
 	pulse_on_time=LONG_MAX;
-	pulse_off_time=LONG_MAX;
-  
+
   mypin_pulse = pin_pulse;
   mypin_dir = pin_dir;
   
@@ -24,8 +23,10 @@ StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir) {
 
   this->num_motor = num_motor;
   sweeping=0;
+  steps_completed=0;
 
-  table_counter=0;
+  table_counter=0; // TODO: This belongs only with the LUT derived class
+  table_ptr=luts[num_motor-1];
 }
 
 // Save the endpoint and the step interval, set the direction pin 
@@ -46,6 +47,7 @@ void StepperState::prepare_move(signed long pos_end, unsigned long move_duration
 	}
 
   step_trace_counter=0; // DBG
+  steps_completed=0;
 
   // TODO: be careful about rounding here!
   if (total_steps>0)
@@ -74,7 +76,10 @@ void StepperState::start_move() {
     high_time = MIN_PULSE_DUR_USEC; // Will set to low after this much time (minimum)
     pulse_on_time = micros(); // arm first movement: NOW!
     
-    interval_next = int( pgm_read_byte_near(table1+0) );
+    steps_completed=0;
+
+	// TODO: This should go with LUT only
+    interval_next = int( pgm_read_byte_near(table_ptr+0) );
     table_counter=1;
     
     //interval_next = int(step_interval_us); // start out with theoretical interval
@@ -125,68 +130,65 @@ void StepperState::do_update() {
 
   if (!sweeping)
     return;
-    
+
+  // All the timechecking functions use (now-target_event_time) > desired_duration, which should avoid overflow.
   unsigned long now = micros();
   unsigned long elapsed = (now-pulse_on_time);
   
-	if ( elapsed > high_time ) {
+  if (elapsed>=2048) { // Error checking: too long elapsed means something may have been missed
+    bad_now = now;
+    bad_elapsed = elapsed;
+    bad_potime = pulse_on_time;
+
+  };
+     
+	if ( elapsed > high_time ) {  // time to lower an ON pulse?
 	  stop_pulse();
     high_time=-1; // Set this to be large so that won't keep pulling low, until next "on" brings high_time to Xus
-
-/*
-    if (elapsed>100) {
-      bad_now = now;
-      bad_elapsed = elapsed;
-      bad_potime = pulse_on_time;
-
-    // step_trace[step_trace_counter%TRACE_BUF_SIZE] = elapsed;
-    // step_trace_counter++;
-    } */
 	}
 
 	// Probably don't want this to execute also right after above
 	// If it's too fast, that will be a problem (not enough of a duty cycle)
 	// For now, assume that step_interval_us is fairly large, >> 5us or so
+	else if (elapsed > (interval_next) ) { // time for next ON pulse?
 
-	else if (elapsed > (interval_next) ) {
+    unsigned long interval = get_next_interval();
 
-    unsigned long table_interval = pgm_read_byte_near(table1 + table_counter);
-    table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
-    table_counter++;
+    error = elapsed - interval_next; // don't accumulate errors, just most recent
 
-    error = elapsed - interval_next; //step_interval_us; // don't accumulate errors, just most recent
-
-    if (( table_interval - error ) < 0 )
+    if (( interval - error ) < 0 )
       interval_next = 20;
     else
-      // interval_next = int( step_interval_us - error );
-      interval_next = table_interval - error;
-      
-    if (num_motor == 1) {
+      interval_next = interval - error;
+
+    // Interval trace debugging
+    if (num_motor == DEBUG_MOTOR) {
 #if (!CIRCULAR_DEBUG_BUFFER)
       if (step_trace_counter<TRACE_BUF_SIZE) {
 #endif
-        step_trace[step_trace_counter%TRACE_BUF_SIZE] = int(table_interval);
+        step_trace[step_trace_counter%TRACE_BUF_SIZE] = elapsed; //int(interval);
         //step_trace[(step_trace_counter+1)%TRACE_BUF_SIZE] = interval_next;
 #if (!CIRCULAR_DEBUG_BUFFER)
       }
 #endif
-      step_trace_counter+=1;
+      step_trace_counter++;
     }
 
     pulse_on_time = now;
-	digitalWrite(mypin_pulse,HIGH);
-    high_time = MIN_PULSE_DUR_USEC;   // So the set low will happen once
+	  digitalWrite(mypin_pulse,HIGH);
+    high_time = MIN_PULSE_DUR_USEC;   // To arm lowering the pulse soon
     
     // Update the current position
     pos_current = pos_current + mydir; // mydir will be +1 or -1
-	  //pulse_off_time = micros() + MIN_PULSE_DUR_USEC;
    
-    // With each step is too noisy
+    // Debug output at each step is too noisy
     if ( !(step_trace_counter % 4000) )
       debug_output(1);
+
+    steps_completed++;
       
-    // Decide whether to re-arm for another movement
+    // Decide whether to re-arm for another movement.
+    // Since going single steps, testing for equality should be okay
 		if (pos_current == mypos_end) {
       // done, at destination
       stop_move(1);
@@ -194,20 +196,19 @@ void StepperState::do_update() {
 	}
 };
 
-Stepper1::Stepper1(int num_motor, int pin_pulse, int pin_dir) : StepperState( num_motor, pin_pulse, pin_dir ) {}
+StepperLUT::StepperLUT(int num_motor, int pin_pulse, int pin_dir) : StepperState( num_motor, pin_pulse, pin_dir )
+{}
 
-inline void Stepper1::writePulseLow(boolean value) {
-  digitalWriteFast(DRIVER1_PULSE,LOW);
-};
-inline void Stepper1::writePulseHigh(boolean value) {
-  digitalWriteFast(DRIVER1_PULSE,HIGH);
-};
+unsigned int StepperLUT::get_next_interval() {
+	unsigned long table_interval=pgm_read_byte_near(table_ptr + table_counter); // make ulong for precision in multiply below. Else overflow
+    table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
+    table_counter++;
+	return table_interval;
+}
 
-Stepper2::Stepper2(int num_motor, int pin_pulse, int pin_dir) : StepperState( num_motor, pin_pulse, pin_dir ) {}
+StepperConstant::StepperConstant(int num_motor, int pin_pulse, int pin_dir) : StepperState( num_motor, pin_pulse, pin_dir )
+{}
 
-inline void Stepper2::writePulseLow(boolean value) {
-  digitalWriteFast(DRIVER2_PULSE,LOW);
-};
-inline void Stepper2::writePulseHigh(boolean value) {
-  digitalWriteFast(DRIVER2_PULSE,HIGH);
-};
+unsigned int StepperConstant::get_next_interval() {
+	return int(step_interval_us);
+}
