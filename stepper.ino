@@ -59,9 +59,9 @@ void setup() {
     
     legacy_setup(); // Call legacy setup code. Sets pin directions, mainly.
 
-    stepper1 = new Stepper1(1, DRIVER1_PULSE,DRIVER1_DIR);
-    stepper2 = new Stepper2(2, DRIVER2_PULSE,DRIVER2_DIR); 
-    stepper3 = new Stepper2(3, DRIVER3_PULSE,DRIVER3_DIR); 
+    stepper1 = new Stepper1(1, DRIVER1_PULSE, DRIVER1_DIR);
+    stepper2 = new Stepper2(2, DRIVER2_PULSE, DRIVER2_DIR); 
+    stepper3 = new Stepper2(3, DRIVER3_PULSE, DRIVER3_DIR); 
     //stepper4 = new StepperState(4, DRIVER4_PULSE,DRIVER4_DIR); 
 }
 

@@ -5,9 +5,8 @@
 #include "lookup_table1.h"
 
 #define DEBUG_STEPPER 0
-
-#define CIRCULAR_DEBUG_BUFFER 1
-//set to "0" to only get first n samples, otherwise is circular buffer
+#define DEBUG_MOTOR 1 // Which motor to save time intervals for
+#define CIRCULAR_DEBUG_BUFFER 1  //set to "0" to only get first n samples, otherwise is circular buffer (to observe last samples)
 
 // StepperState implementation. Constructors just inits.
 StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir) {
@@ -129,19 +128,16 @@ void StepperState::do_update() {
   unsigned long now = micros();
   unsigned long elapsed = (now-pulse_on_time);
   
+  if (elapsed>=2048) { // Error checking: too long elapsed means something may have been missed
+    bad_now = now;
+    bad_elapsed = elapsed;
+    bad_potime = pulse_on_time;
+
+  };
+     
 	if ( elapsed > high_time ) {
 	  stop_pulse();
     high_time=-1; // Set this to be large so that won't keep pulling low, until next "on" brings high_time to Xus
-
-/*
-    if (elapsed>100) {
-      bad_now = now;
-      bad_elapsed = elapsed;
-      bad_potime = pulse_on_time;
-
-    // step_trace[step_trace_counter%TRACE_BUF_SIZE] = elapsed;
-    // step_trace_counter++;
-    } */
 	}
 
 	// Probably don't want this to execute also right after above
@@ -161,8 +157,9 @@ void StepperState::do_update() {
     else
       // interval_next = int( step_interval_us - error );
       interval_next = table_interval - error;
-      
-    if (num_motor == 1) {
+
+    // Interval trace debugging
+    if (num_motor == DEBUG_MOTOR) {
 #if (!CIRCULAR_DEBUG_BUFFER)
       if (step_trace_counter<TRACE_BUF_SIZE) {
 #endif
@@ -175,18 +172,19 @@ void StepperState::do_update() {
     }
 
     pulse_on_time = now;
-	digitalWrite(mypin_pulse,HIGH);
+	  digitalWrite(mypin_pulse,HIGH);
     high_time = MIN_PULSE_DUR_USEC;   // So the set low will happen once
     
     // Update the current position
     pos_current = pos_current + mydir; // mydir will be +1 or -1
 	  //pulse_off_time = micros() + MIN_PULSE_DUR_USEC;
    
-    // With each step is too noisy
+    // Debug output at each step is too noisy
     if ( !(step_trace_counter % 4000) )
       debug_output(1);
       
-    // Decide whether to re-arm for another movement
+    // Decide whether to re-arm for another movement.
+    // Since going single steps, testing for equality should be okay
 		if (pos_current == mypos_end) {
       // done, at destination
       stop_move(1);
