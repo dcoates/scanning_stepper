@@ -2,28 +2,32 @@
 #include "driver_unit.h"
 #include "digitalWriteFast.h"
 
-// The first of each of these numbers depends on the DIP switch settings (steps/rev)
-// The second depends on the units (1 revolution=360 deg, X mm, etc..)
+// In theory, the first of each of these numbers depends on the DIP switch settings (steps/rev)
+// The second depends on the units (1 revolution=360 deg, X mm, etc..). BUT
+// The relationship isn't so clear based on the other mechanical stages, so expressing as steps
+// (and measuring empirically) is more straightforward.
 #define STEPPER1_STEPS_PER_UNIT (200.0/2.0) /* Degrees. Empirical: not sure why "/4" */
 #define STEPPER2_STEPS_PER_UNIT 1
 // Old stepper2: (8000.0/4.0)  
 #define STEPPER3_STEPS_PER_UNIT 1
 // Old stepper3 DIP(8000.0/4.0)
-#define STEPPER4_STEPS_PER_UNIT (1600.0/4.0) /* MM */
+//#define STEPPER4_STEPS_PER_UNIT (1600.0/4.0) /* MM */
 
-// Zero point for Stepper1 is at 1300 steps away from "0" (due to non-linear scissors)
-// Zero point for Stepper2?
-// Zero point for Stepper3 is zero
- 
+// Zero/middle point for Stepper1 is at 1300 steps away from "0" (due to non-linear scissors)
+// Zero/middle point for Stepper2?
+// Zero/middle point for Stepper3 is zero
+
+// Where to begin the sweep. Button press left moves from "0" here
 #define STEPPER1_START (-35+13) //-65.0 // -65.0
 #define STEPPER2_START -3200
 #define STEPPER3_START -2000
-#define STEPPER4_START
+//#define STEPPER4_START
 
+// Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (35 + 13)
 #define STEPPER2_END 3200
 #define STEPPER3_END 2000
-#define STEPPER4_END
+//#define STEPPER4_END
 
 // -30 to +30 : 30.36mm
 
@@ -51,16 +55,15 @@ unsigned int any_sweeping=0;
 unsigned int step_trace_counter=0;
 unsigned int step_trace[TRACE_BUF_SIZE];
 
-// all 3 instances overwrite this global (TODO fix):
+// All 3 instances overwrite this global (TODO fix):
 unsigned long sweep_start_time;
 unsigned long sweep_end_time;
 
-// All 3 write into this, to indicate extra-long intervals
-// Suggestive of a timing error
+// All 3 write into this, to indicate extra-long intervals,
+// Suggestive of a timing error. Okay as-is for error checking.
 unsigned long bad_now;
 unsigned long bad_elapsed;
 unsigned long bad_potime;
-
 
 void setup() {
 
@@ -112,6 +115,7 @@ void loop() {
   any_sweeping = (stepper1->sweeping || stepper2->sweeping || stepper3->sweeping); // & stepper3->sweeping & stepper4->sweeping;
     
   if (!any_sweeping) {
+      // No sweep happening: do legacy (manual) ops, serial debugging, check for hold
 
       interrupts();
  
@@ -131,23 +135,19 @@ void loop() {
         }
       }
   
-    legacy_loop(); // main loop from old front panel
-    
-    if (((millis() - lastDebounceTime1)>BUTTON_HOLD_MS) && dir1Current && (!any_sweeping) ) { //Hold for 3 seconds 
-      sweep_to_start();
-    } else if (((millis() - lastDebounceTime2)>BUTTON_HOLD_MS) && dir2Current && (!any_sweeping) ) { //Hold for 3 seconds 
-      sweep_to_zero();
-    } else if (((millis() - lastDebounceTime3)>BUTTON_HOLD_MS) && dir3Current && (!any_sweeping) ) { //Hold for 3 seconds 
-      sweep_to_stop();
-    } else {
-      // NOTHING IS HELD : For now, stop all movements if no held buttons.
-      //Serial.println("NOTHING"); 
-      //stepper1->stop_move(0); // 0=don't mess with the pulses, just cancel swept movement
-      //stepper2->stop_move(0);
-    }
-  } else {
+    legacy_loop(); // main loop from old front panel for manual ops
 
-    // Failsafe: touch right GO button to stop
+    // Are any buttons held to sweep?
+    unsigned long now = millis();
+    if (((now - lastDebounceTime1)>BUTTON_HOLD_MS) && dir1Current && (!any_sweeping) ) {
+      sweep_to_start();
+    } else if (((now - lastDebounceTime2)>BUTTON_HOLD_MS) && dir2Current && (!any_sweeping) ) { 
+      sweep_to_zero();
+    } else if (((now - lastDebounceTime3)>BUTTON_HOLD_MS) && dir3Current && (!any_sweeping) ) { 
+      sweep_to_stop();
+    } 
+  } else { // In a sweep
+    // Failsafe: touch right GO button to stop. Don't even debounce: bail immediately if any button action.
     if (digitalRead(m3go)==HIGH) {
       stepper1->stop_move(1);
       stepper2->stop_move(1);
@@ -157,7 +157,7 @@ void loop() {
     
       noInterrupts();
   
-      // Only move if there is a confirmed sweep happening. Prevents phantoms
+      // Move if there is a confirmed sweep happening.
       stepper1->do_update();
       stepper2->do_update();
       stepper3->do_update();
