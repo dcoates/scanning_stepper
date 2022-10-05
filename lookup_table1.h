@@ -1,6 +1,8 @@
-const unsigned int table_scaler = 9635;
-const unsigned int table_expander_exponent = 11;
-const unsigned int table_interval_min = 251;
+const unsigned int table1_info[] = {
+	7000, //num_steps
+	9635, //const unsigned int table_scaler = ;
+	11, //const unsigned int table_expander_exponent = ;
+	251}; //const unsigned int table_interval_min = };
 const PROGMEM uint8_t table1[] = {
 254,
 253,

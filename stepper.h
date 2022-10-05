@@ -19,8 +19,19 @@ public:
   unsigned int steps_completed; // global for debugging
   float step_interval_us; // target value, when constant (not LUT)
   word table_counter;		// Public for debugging, LUT
+
+  signed int pos_current;
+
+  // These only refer to tables, so should be in derived class but are here
+  // for convenience
   uint8_t *table_ptr;
-        
+  unsigned int table_scaler;
+  unsigned int table_expander_exponent;
+  unsigned int table_interval_min;
+
+
+  void set_table_info(byte ntable);
+
 private:
   int num_motor;
 
@@ -35,8 +46,6 @@ private:
   int mypin_pulse;
   int mypin_dir;
 
-  // State knowledge:
-  signed long pos_current;
   signed long mypos_end;
   signed int mydir; // -1 or +1
 };

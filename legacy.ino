@@ -59,7 +59,9 @@ void legacy_setup(){
   pinMode(m3dir, INPUT);        // Set pin#13 as an INPUT - direction push button  
   pinMode(limit1, INPUT);       // Set pin# 17 as INPUT - imit switch input, axis1
   pinMode(limit2, INPUT);       // Set pin# 18 as INPUT - limit switch input, axis2
-  pinMode(limit2, INPUT);       // Set pin# 19 as INPUT - limit switch input, axis3 
+
+  // Changed by us at UHCO:
+  pinMode(limit3, OUTPUT);       // LIMIT 3 will actually be camera output!!
 }
 
 void legacy_loop() {

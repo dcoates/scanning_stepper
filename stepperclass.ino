@@ -3,11 +3,15 @@
 #include "limits.h" // for LONG_MAX
 
 #include "lookup_table1.h"
-uint8_t* luts[]={table1,table1,table1};
+#include "lookup_table2.h"
+#include "lookup_table2r.h"
+unsigned int* table_info[]={table1_info,table2_info,table2r_info};
+uint8_t* luts[]={table1,table2,table2r};
 
 #define DEBUG_STEPPER 0
 #define DEBUG_MOTOR 3 // Which motor to save time intervals for
 #define CIRCULAR_DEBUG_BUFFER 1  //set to "0" to only get first n samples, otherwise is circular buffer (to observe last samples)
+
 
 // StepperState implementation. Constructors just inits.
 StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir) {
@@ -26,7 +30,15 @@ StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir) {
   steps_completed=0;
 
   table_counter=0; // TODO: This belongs only with the LUT derived class
-  table_ptr=luts[num_motor-1];
+
+  set_table_info(num_motor-1);
+}
+
+void StepperState::set_table_info(byte ntable) {
+  table_ptr=luts[ntable];
+  table_scaler=table_info[ntable][1];
+  table_expander_exponent=table_info[ntable][2];
+  table_interval_min=table_info[ntable][3];
 }
 
 // Save the endpoint and the step interval, set the direction pin 
@@ -79,14 +91,13 @@ void StepperState::start_move() {
     steps_completed=0;
 
 	// TODO: This should go with LUT only
+    table_counter=0;
     interval_next = int( pgm_read_byte_near(table_ptr+0) );
-    table_counter=1;
     
     //interval_next = int(step_interval_us); // start out with theoretical interval
     error=0.0;
     
     sweeping=1;
-    sweep_start_time=pulse_on_time; // now
     debug_output(0);
   }
 };
@@ -104,8 +115,8 @@ void StepperState::stop_move(unsigned int lower_pulse) {
   sweep_end_time=micros();
   debug_output(2);
 
-  Serial.print(mypin_pulse);
-  Serial.println("done");
+  Serial.print(num_motor);
+  Serial.println(" stop");
 };
 
 #if DEBUG_STEPPER
@@ -167,7 +178,6 @@ void StepperState::do_update() {
       if (step_trace_counter<TRACE_BUF_SIZE) {
 #endif
         step_trace[step_trace_counter%TRACE_BUF_SIZE] = elapsed; //int(interval);
-        //step_trace[(step_trace_counter+1)%TRACE_BUF_SIZE] = interval_next;
 #if (!CIRCULAR_DEBUG_BUFFER)
       }
 #endif
@@ -190,8 +200,16 @@ void StepperState::do_update() {
     // Decide whether to re-arm for another movement.
     // Since going single steps, testing for equality should be okay
 		if (pos_current == mypos_end) {
-      // done, at destination
-      stop_move(1);
+
+      // If motor 2, that reverse once:
+      if ( (num_motor==2) && (pos_current==(signed int)STEPPER2_END)) {
+          set_table_info(2); // Reverse direction from different lut
+          prepare_move( (signed long) STEPPER2_START, 0L); // This will reverse dir also and reset mypos_end, etc.
+          start_move();  
+      } else {
+        // done, at destination
+        stop_move(1);
+      }
 		}
 	}
 };
@@ -203,6 +221,9 @@ unsigned int StepperLUT::get_next_interval() {
 	unsigned long table_interval=pgm_read_byte_near(table_ptr + table_counter); // make ulong for precision in multiply below. Else overflow
     table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
     table_counter++;
+
+    if (table_counter > 6998) // TODO: get real length of table
+      table_counter=0; // Neurotic check to not go past len of table 
 	return table_interval;
 }
 
