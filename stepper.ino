@@ -72,7 +72,7 @@ unsigned int pos_curr=0;
 signed long pos_buffer[POS_BUF_SIZE]; // Store tiime + pos for each motor
 unsigned long sweep_snap_time=0;
 
-
+uint8_t in_sweep=0;
 void setup() {
 
     Serial.begin(9600);
@@ -83,6 +83,8 @@ void setup() {
     stepper1 = new StepperLUT(1, DRIVER1_PULSE, DRIVER1_DIR);
     stepper2 = new StepperLUT(2, DRIVER2_PULSE, DRIVER2_DIR); 
     stepper3 = new StepperConstant(3, DRIVER3_PULSE,DRIVER3_DIR); 
+
+    in_sweep=0;
 }
 
 void debug_blast() {
@@ -134,7 +136,7 @@ void debug_blast() {
 
 }
 
-uint8_t in_sweep=0;
+
 
 void loop() {
   //any_sweeping = 1; //(stepper1->sweeping || stepper2->sweeping || stepper3->sweeping); // & stepper3->sweeping & stepper4->sweeping;
@@ -160,23 +162,23 @@ void loop() {
         }
       }
   
-    //legacy_loop(); // main loop from old front panel for manual ops
+    legacy_loop(); // main loop from old front panel for manual ops
 
     // Are any buttons held to sweep?
     unsigned long now = millis();
     if (((now - lastDebounceTime1)>BUTTON_HOLD_MS) && dir1Current && (!any_sweeping) ) {
-      noInterrupts();
       sweep_to_start2();
+      //noInterrupts();
     } else if (((now - lastDebounceTime2)>BUTTON_HOLD_MS) && dir2Current && (!any_sweeping) ) { 
-      noInterrupts();
-		  sweep_to_zero2();
+      sweep_to_zero2();
+      //noInterrupts();
     } else if (((now - lastDebounceTime3)>BUTTON_HOLD_MS) && dir3Current && (!any_sweeping) ) { 
-      noInterrupts();
       sweep_to_end2();
+      //noInterrupts();
     } 
   } else { // In a sweep
     // Failsafe: touch right GO button to stop. Don't even debounce: bail immediately if any button action.
-    if (digitalRead(m3go)==9) {
+    if (digitalRead(m3go)==HIGH) {
       stepper1->stop_move(1);
       stepper2->stop_move(1);
       stepper3->stop_move(1); 
