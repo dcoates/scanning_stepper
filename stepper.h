@@ -50,14 +50,16 @@ private:
   signed int mydir; // -1 or +1
 };
 
-// Create derived classes just to override read and write digital Fns
-// inline them to make them faster
-// See the "writeFast" library: improves read/write digital from 5us to <1us
-// Currently not using this until we know we need the performance.
-class StepperLUT : public StepperState
+class StepperLUT8 : public StepperState // 8 bit
 {
 public:
-  StepperLUT(int num_motor, int pin_go, int pin_dir);
+  StepperLUT8(int num_motor, int pin_go, int pin_dir);
+  unsigned int get_next_interval();
+};
+class StepperLUT16 : public StepperState // 16 bit
+{
+public:
+  StepperLUT16(int num_motor, int pin_go, int pin_dir);
   unsigned int get_next_interval();
 };
 

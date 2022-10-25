@@ -19,13 +19,13 @@
 
 // Where to begin the sweep. Button press left moves from "0" here
 #define STEPPER1_START (-35+13) //-65.0 // -65.0
-#define STEPPER2_START -3200
+#define STEPPER2_START -800
 #define STEPPER3_START -2000
 //#define STEPPER4_START
 
 // Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (35 + 13)
-#define STEPPER2_END 3200
+#define STEPPER2_END 0
 #define STEPPER3_END 2000
 //#define STEPPER4_END
 
@@ -45,8 +45,8 @@ int dir2Current;
 int dir3Current;
 
 // class instances for each stepper motor
-StepperLUT* stepper1;
-StepperLUT* stepper2;
+StepperLUT8* stepper1;
+StepperLUT16* stepper2;
 StepperConstant* stepper3;
 
 // One motor instance will write into the trace buffer:
@@ -80,8 +80,8 @@ void setup() {
     
     legacy_setup(); // Call legacy setup code. Sets pin directions, mainly.
 
-    stepper1 = new StepperLUT(1, DRIVER1_PULSE, DRIVER1_DIR);
-    stepper2 = new StepperLUT(2, DRIVER2_PULSE, DRIVER2_DIR); 
+    stepper1 = new StepperLUT8(1, DRIVER1_PULSE, DRIVER1_DIR);
+    stepper2 = new StepperLUT16(2, DRIVER2_PULSE, DRIVER2_DIR); 
     stepper3 = new StepperConstant(3, DRIVER3_PULSE,DRIVER3_DIR); 
 
     in_sweep=0;
@@ -136,8 +136,6 @@ void debug_blast() {
 
 }
 
-
-
 void loop() {
   //any_sweeping = 1; //(stepper1->sweeping || stepper2->sweeping || stepper3->sweeping); // & stepper3->sweeping & stepper4->sweeping;
     
@@ -162,7 +160,7 @@ void loop() {
         }
       }
   
-    legacy_loop(); // main loop from old front panel for manual ops
+   // legacy_loop(); // main loop from old front panel for manual ops
 
     // Are any buttons held to sweep?
     unsigned long now = millis();
@@ -178,7 +176,7 @@ void loop() {
     } 
   } else { // In a sweep
     // Failsafe: touch right GO button to stop. Don't even debounce: bail immediately if any button action.
-    if (digitalRead(m3go)==HIGH) {
+    if (digitalRead(m3go)==-1) {
       stepper1->stop_move(1);
       stepper2->stop_move(1);
       stepper3->stop_move(1); 

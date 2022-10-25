@@ -6,7 +6,7 @@
 #include "lookup_table2.h"
 #include "lookup_table2r.h"
 unsigned int* table_info[]={table1_info,table2_info,table2r_info};
-uint8_t* luts[]={table1,table2,table2r};
+void* luts[]={table1,table2,table2r};
 
 #define DEBUG_STEPPER 0
 #define DEBUG_MOTOR 3 // Which motor to save time intervals for
@@ -214,10 +214,10 @@ void StepperState::do_update() {
 	}
 };
 
-StepperLUT::StepperLUT(int num_motor, int pin_pulse, int pin_dir) : StepperState( num_motor, pin_pulse, pin_dir )
+StepperLUT8::StepperLUT8(int num_motor, int pin_pulse, int pin_dir) : StepperState( num_motor, pin_pulse, pin_dir )
 {}
 
-unsigned int StepperLUT::get_next_interval() {
+unsigned int StepperLUT8::get_next_interval() {
 	unsigned long table_interval=pgm_read_byte_near(table_ptr + table_counter); // make ulong for precision in multiply below. Else overflow
     table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
     table_counter++;
@@ -225,6 +225,19 @@ unsigned int StepperLUT::get_next_interval() {
     if (table_counter > 6998) // TODO: get real length of table
       table_counter=0; // Neurotic check to not go past len of table 
 	return table_interval;
+}
+
+StepperLUT16::StepperLUT16(int num_motor, int pin_pulse, int pin_dir) : StepperState( num_motor, pin_pulse, pin_dir )
+{}
+
+unsigned int StepperLUT16::get_next_interval() {
+  unsigned long table_interval=pgm_read_word_near(table_ptr + 2*table_counter); // It's an 8bit pointer, so need to double 
+    table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
+    table_counter++;
+
+    if (table_counter > 6998) // TODO: get real length of table
+      table_counter=0; // Neurotic check to not go past len of table 
+  return table_interval;
 }
 
 StepperConstant::StepperConstant(int num_motor, int pin_pulse, int pin_dir) : StepperState( num_motor, pin_pulse, pin_dir )
