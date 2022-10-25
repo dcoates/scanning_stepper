@@ -209,6 +209,10 @@ void StepperState::do_update() {
       } else {
         // done, at destination
         stop_move(1);
+
+        if (num_motor==2)  {
+          set_table_info(1); // Set to table1 (forward) for next time
+        }
       }
 		}
 	}
