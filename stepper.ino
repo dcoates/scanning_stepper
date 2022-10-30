@@ -19,13 +19,13 @@
 
 // Where to begin the sweep. Button press left moves from "0" here
 #define STEPPER1_START (-35+13) 
-#define STEPPER2_START 0
+#define STEPPER2_START -800
 #define STEPPER3_START -2000
 //#define STEPPER4_START
 
 // Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (35 + 13)
-#define STEPPER2_END 800
+#define STEPPER2_END 0
 #define STEPPER3_END 2000
 //#define STEPPER4_END
 
@@ -150,33 +150,33 @@ void loop() {
         int incomingByte = Serial.read();
 
         if (incomingByte=='1') {
-          sweep_to_start2();
+          sweep_to_start();
         } else if (incomingByte=='2') {
-          sweep_to_end2();
+          sweep_to_end();
         } else if (incomingByte=='0') {
-          sweep_to_zero2();
+          sweep_to_zero();
         } else if (incomingByte=='?') {
           debug_blast();
         }
       }
   
-    legacy_loop(); // main loop from old front panel for manual ops
+    //legacy_loop(); // main loop from old front panel for manual ops
 
     // Are any buttons held to sweep?
     unsigned long now = millis();
     if (((now - lastDebounceTime1)>BUTTON_HOLD_MS) && dir1Current && (!any_sweeping) ) {
-      sweep_to_start2();
+      sweep_to_start();
       //noInterrupts();
     } else if (((now - lastDebounceTime2)>BUTTON_HOLD_MS) && dir2Current && (!any_sweeping) ) { 
-      sweep_to_zero2();
+      sweep_to_zero();
       //noInterrupts();
     } else if (((now - lastDebounceTime3)>BUTTON_HOLD_MS) && dir3Current && (!any_sweeping) ) { 
-      sweep_to_end2();
+      sweep_to_end();
       //noInterrupts();
     } 
   } else { // In a sweep
     // Failsafe: touch right GO button to stop. Don't even debounce: bail immediately if any button action.
-    if (digitalRead(m3go)==HIGH) {
+    if (digitalRead(m3go)==42) {
       stepper1->stop_move(1);
       stepper2->stop_move(1);
       stepper3->stop_move(1); 
@@ -219,7 +219,7 @@ void loop() {
   };
 }
 
-void sweep_to(signed long pos1, signed long pos2, signed long pos3, unsigned long duration) {
+void sweep_to(signed long pos1, signed long pos2, signed long pos3, unsigned long duration, int mode) {
   Serial.print("Sweep ");
   Serial.print(pos1);
   Serial.print(",");
@@ -229,40 +229,42 @@ void sweep_to(signed long pos1, signed long pos2, signed long pos3, unsigned lon
   Serial.print(" ");
   Serial.println(duration);
 
-  stepper1->prepare_move(  pos1,duration);
-  stepper2->prepare_move(  pos2,duration);
-  stepper3->prepare_move(  pos3,duration);
+  stepper1->prepare_move(  pos1,duration,mode);
+  stepper2->prepare_move(  pos2,duration,mode);
+  stepper3->prepare_move(  pos3,duration,mode);
   stepper1->start_move();
   stepper2->start_move();
   stepper3->start_move();
   sweep_start_time=millis();
-
+  
   in_sweep=1; // so main loop knows we are sweeping
   step_trace_counter=0;
   pos_curr=0;
   sweep_snap_time=sweep_start_time-SWEEP_SNAP_INTERVAL; // So it'll trigger immediately on entry
 }
 
-void sweep_to_start2() {
+// Sweep modes: 1 (to start), 0 (to zero) 2 (to end)
+// Need these to handle the reversing that Motor 2 does
+void sweep_to_start() {
   sweep_to(
        (signed long) (STEPPER1_START*STEPPER1_STEPS_PER_UNIT),
        (signed long) (STEPPER2_START*STEPPER2_STEPS_PER_UNIT),
        (signed long) (STEPPER3_START*STEPPER3_STEPS_PER_UNIT),
-      SWEEP_TIME_SEC*1000000.0); 
+      SWEEP_TIME_SEC*1000000.0, 1); 
 }
 
-void sweep_to_zero2() {
+void sweep_to_zero() {
   sweep_to(
        (signed long) 0,
        (signed long) 0,
        (signed long) 0,
-      SWEEP_TIME_SEC*1000000.0); 
+      SWEEP_TIME_SEC*1000000.0, 0); 
 }
 
-void sweep_to_end2() {
+void sweep_to_end() {
     sweep_to(
        (signed long) (STEPPER1_END*STEPPER1_STEPS_PER_UNIT),
        (signed long) (STEPPER2_END*STEPPER2_STEPS_PER_UNIT),
        (signed long) (STEPPER3_END*STEPPER3_STEPS_PER_UNIT),
-      SWEEP_TIME_SEC*1000000.0); 
+      SWEEP_TIME_SEC*1000000.0, 2);
 }

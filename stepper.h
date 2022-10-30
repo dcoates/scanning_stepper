@@ -7,7 +7,7 @@ public:
   StepperState(int num_motor, int pin_go, int pin_dir);
   inline void do_update();  // state machine to run every loop
 
-  void prepare_move(signed long pos_end, unsigned long move_duration);
+  void prepare_move(signed long pos_end, unsigned long move_duration, int mode);
   void start_move();
   void stop_pulse(); // Immediately set pulse low
   void stop_move(unsigned int lower_pulse);  // Stop and cancel future movements.
@@ -20,6 +20,7 @@ public:
   float step_interval_us; // target value, when constant (not LUT)
   word table_counter;		// Public for debugging, LUT
 
+  int mode;
   signed int pos_current;
 
   // These only refer to tables, so should be in derived class but are here
@@ -28,7 +29,6 @@ public:
   unsigned int table_scaler;
   unsigned int table_expander_exponent;
   unsigned int table_interval_min;
-
 
   void set_table_info(byte ntable);
 

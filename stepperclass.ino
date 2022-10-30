@@ -29,6 +29,8 @@ StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir) {
   sweeping=0;
   steps_completed=0;
 
+  mode=-1;
+  
   table_counter=0; // TODO: This belongs only with the LUT derived class
 
   set_table_info(num_motor-1);
@@ -42,7 +44,7 @@ void StepperState::set_table_info(byte ntable) {
 }
 
 // Save the endpoint and the step interval, set the direction pin 
-void StepperState::prepare_move(signed long pos_end, unsigned long move_duration) {
+void StepperState::prepare_move(signed long pos_end, unsigned long move_duration, int mode) {
   mypos_end = pos_end;
   unsigned long total_steps;
 	if (pos_end>pos_current)  {
@@ -58,6 +60,8 @@ void StepperState::prepare_move(signed long pos_end, unsigned long move_duration
     total_steps = 0;
 	}
 
+  this->mode = mode;
+  
   step_trace_counter=0; // DBG
   steps_completed=0;
 
@@ -202,9 +206,10 @@ void StepperState::do_update() {
 		if (pos_current == mypos_end) {
 
       // If motor 2, that reverse once:
-      if ( (num_motor==2) && (pos_current==(signed int)STEPPER2_END)) {
+      // Mode=0 is zeroing, so we don't want to do the reversal in that case
+      if ( (num_motor==2) && (pos_current==(signed int)STEPPER2_END) && (mode!=0) ) {
           set_table_info(2); // Reverse direction from different lut
-          prepare_move( (signed long) STEPPER2_START, 0L); // This will reverse dir also and reset mypos_end, etc.
+          prepare_move( (signed long) STEPPER2_START, 0L, 3); // This will reverse dir also and reset mypos_end, etc. //Reversing=mode 3
           start_move();  
       } else {
         // done, at destination
