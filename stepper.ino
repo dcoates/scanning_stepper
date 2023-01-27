@@ -20,13 +20,13 @@
 // Where to begin the sweep. Button press left moves from "0" here
 #define STEPPER1_START (-35+13) 
 #define STEPPER2_START -800
-#define STEPPER3_START -2000
+#define STEPPER3_START -1000
 //#define STEPPER4_START
 
 // Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (35 + 13)
 #define STEPPER2_END 0
-#define STEPPER3_END 2000
+#define STEPPER3_END 1000
 //#define STEPPER4_END
 
 // -30 to +30 : 30.36mm
@@ -160,7 +160,7 @@ void loop() {
         }
       }
   
-    //legacy_loop(); // main loop from old front panel for manual ops
+    legacy_loop(); // main loop from old front panel for manual ops
 
     // Are any buttons held to sweep?
     unsigned long now = millis();
@@ -176,7 +176,7 @@ void loop() {
     } 
   } else { // In a sweep
     // Failsafe: touch right GO button to stop. Don't even debounce: bail immediately if any button action.
-    if (digitalRead(m3go)==42) {
+    if (digitalRead(m3go)==HIGH) {
       stepper1->stop_move(1);
       stepper2->stop_move(1);
       stepper3->stop_move(1); 

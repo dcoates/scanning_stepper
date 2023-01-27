@@ -57,6 +57,10 @@ void legacy_setup(){
   pinMode(DRIVER3_DIR, OUTPUT);     // Set pin#11 as output - direction bit
   pinMode(m3go, INPUT);         // Set pin#12 as an INPUT - motor3 start button
   pinMode(m3dir, INPUT);        // Set pin#13 as an INPUT - direction push button  
+
+  //pinMode(limit1, INPUT);       // Set pin# 17 as INPUT - imit switch input, axis1
+  //pinMode(limit2, INPUT);       // Set pin# 18 as INPUT - limit switch input, axis2
+
   pinMode(limit1, INPUT);       // Set pin# 17 as INPUT - imit switch input, axis1
   pinMode(limit2, INPUT);       // Set pin# 18 as INPUT - limit switch input, axis2
 
@@ -114,8 +118,9 @@ start1 = digitalRead(m1go);   //read motor push button
 start2 = digitalRead(m2go);
 start3 = digitalRead(m3go);
     if (start1 == HIGH && start2 == LOW && start3 == LOW) { //only one "tone" commmand at a time
-    val1 = analogRead(motorPot1);          // read the value from the speed potentiometer
-    val1 = map(val1, 0, 1023, 0, 30000);   // extend the value of the pot from 1024max to 30k
+    val1 = analogRead(motorPot3);          // read the value from the speed potentiometer
+    val1 = map(val1, 0, 1023, 0, 3000);   // extend the value of the pot from 1024max to 30k
+    //val1 = 1;
     tone(DRIVER1_PULSE, val1);                 //send pulses to motor1 driver
     m1running = HIGH;                      //set motor running flag
     }
@@ -124,8 +129,9 @@ start3 = digitalRead(m3go);
       m1running = LOW;   //motor is not running
     }
     if (start2 == HIGH && start1 == LOW && start3 == LOW) { //only one "tone" commmand at a time
-    val2 = analogRead(motorPot2);    // read the value from the sensor
-    val2 = map(val2, 0, 1023, 0, 30000); 
+    val2 = analogRead(motorPot3);    // read the value from the sensor
+    val2 = map(val2, 0, 1023, 0, 3000); 
+    //val2 = 1;
     tone(DRIVER2_PULSE, val2);
     m2running = HIGH;
     }
@@ -135,7 +141,8 @@ start3 = digitalRead(m3go);
     }
     if (start3 == HIGH && start2 == LOW && start1 == LOW) { //only one "tone" commmand at a time
     val3 = analogRead(motorPot3);    // read the value from the sensor
-    val3 = map(val3, 0, 1023, 0, 30000); 
+    val3 = map(val3, 0, 1023, 0, 3000); 
+    //val3 = 4;
     tone(DRIVER3_PULSE, val3);
     }
     else if (start3 == LOW) {

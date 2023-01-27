@@ -11,13 +11,16 @@
 
 /////******digital I/O******/////
 // Outputs to motors:
-#define DRIVER1_PULSE  2     //d2 is motor1 OUTPUT pulses
-#define DRIVER1_DIR  3       //d3 is motor1 direction OUTPUT 
+#define DRIVER1_PULSE  14     //d2 is motor1 OUTPUT pulses
+#define DRIVER1_DIR  15       //d3 is motor1 direction OUTPUT 
 #define DRIVER2_PULSE 4     //d4 is motor2 OUTPUT pulses
 #define DRIVER2_DIR 5       //d5 is motor2 direction OUTPUT
 #define DRIVER3_PULSE 10    //d10 is motor3 OUTPUT pulses
 #define DRIVER3_DIR 11      //d11 is motor3 direction OUTPUT
-					
+
+#define DRIVER4_PULSE  2     //d2 is motor1 OUTPUT pulses
+#define DRIVER4_DIR  3       //d3 is motor1 direction OUTPUT 
+
 // Inputs from front panel:
 #define m1go 6          //button INPUT to turn on motor1 
 #define m2go 7          //button INPUT to turn on motor2
