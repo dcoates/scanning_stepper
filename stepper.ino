@@ -33,7 +33,7 @@
 
 #define SWEEP_TIME_SEC 3.0
 #define BUTTON_HOLD_MS 1500
-//// ----------------------------
+#define LIMS_DEBOUNCE_PERIOD_US 2000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
 
 // These are shared between legacy.ino and this file
 // So that we can peek at the buttons
@@ -48,6 +48,7 @@ int dir3Current;
 StepperLUT8* stepper1;
 StepperLUT16* stepper2;
 StepperConstant* stepper3;
+StepperConstant* stepper4;
 
 // One motor instance will write into the trace buffer:
 #define TRACE_BUF_SIZE 4
@@ -83,6 +84,7 @@ void setup() {
     stepper1 = new StepperLUT8(1, DRIVER1_PULSE, DRIVER1_DIR);
     stepper2 = new StepperLUT16(2, DRIVER2_PULSE, DRIVER2_DIR); 
     stepper3 = new StepperConstant(3, DRIVER3_PULSE,DRIVER3_DIR); 
+    stepper4 = new StepperConstant(4, DRIVER4_PULSE,DRIVER4_DIR); 
 
     in_sweep=0;
 }
@@ -132,8 +134,7 @@ void debug_blast() {
   Serial.println(stepper1->pos_current);
   Serial.println(stepper2->pos_current);
   Serial.println(stepper3->pos_current);
-  //Serial.println(stepper4->pos_current);
-
+  Serial.println(stepper4->pos_current);
 }
 
 void loop() {
@@ -213,7 +214,7 @@ void loop() {
       stepper1->do_update();
       stepper2->do_update();
       stepper3->do_update();
-      //stepper4->do_update();
+      stepper4->do_update();
       };
 
   };

@@ -4,6 +4,7 @@
 
 // these are mostly copied from "Arduino_Stepper_control_final.ino"
 
+
  /////analog inputs/////
 #define motorPot1 0     // Analog input, select the input pin for the potentiometer
 #define motorPot2 1     // Analog input, select the input pin for the 2nd potentiometer

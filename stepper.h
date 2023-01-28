@@ -23,6 +23,11 @@ public:
   int mode;
   signed int pos_current;
 
+  //Limit switches:
+  unsigned char lims_present=0; // yes or no?
+  unsigned char lims_state=1;
+  unsigned long lims_last_stable_time=-1; // For debounce
+
   // These only refer to tables, so should be in derived class but are here
   // for convenience
   uint8_t *table_ptr;

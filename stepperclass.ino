@@ -29,6 +29,10 @@ StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir) {
   sweeping=0;
   steps_completed=0;
 
+  lims_present=1; 
+  lims_state=1; // when not pushed it is 1. Probably the default (unless it is already at rail)
+  lims_last_stable_time=-1; // For debounce
+
   mode=-1;
   
   table_counter=0; // TODO: This belongs only with the LUT derived class
@@ -103,6 +107,10 @@ void StepperState::start_move() {
     
     sweeping=1;
     debug_output(0);
+
+	// Reset the debounce counter to start looking for stability now 
+	// (maybe before we were not updating and have a bogus stable time
+    lims_last_stable_time=micros(); 
   }
 };
 
@@ -149,6 +157,18 @@ void StepperState::do_update() {
   // All the timechecking functions use (now-target_event_time) > desired_duration, which should avoid overflow.
   unsigned long now = micros();
   unsigned long elapsed = (now-pulse_on_time);
+
+  if (num_motor==1) { // TODO: use lims_present or derived class) {
+	unsigned char lims_current = digitalRead(limit1); // TODO: Specify port
+	if (lims_current != lims_state) {
+		lims_last_stable_time = now;
+		lims_state = lims_current;
+	} else {
+		if ((micros() - lims_last_stable_time) > LIMS_DEBOUNCE_PERIOD_US) {
+			stop_move(1);
+		}
+	}
+  }
   
   if (elapsed>=2048) { // Error checking: too long elapsed means something may have been missed
     bad_now = now;
