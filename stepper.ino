@@ -35,6 +35,8 @@
 #define BUTTON_HOLD_MS 1500
 #define LIMS_DEBOUNCE_PERIOD_US 2000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
 
+#define REAL_SYSTEM 0 // On the real hardware, this should be 1. If 0, we are probably debugging on Arduino w/o any hardware.
+
 // These are shared between legacy.ino and this file
 // So that we can peek at the buttons
 unsigned long lastDebounceTime1 = 0; 
@@ -76,7 +78,7 @@ unsigned long sweep_snap_time=0;
 uint8_t in_sweep=0;
 void setup() {
 
-    Serial.begin(9600);
+    Serial.begin(115200);
     Serial.println("ready");
     
     legacy_setup(); // Call legacy setup code. Sets pin directions, mainly.
@@ -87,6 +89,22 @@ void setup() {
     stepper4 = new StepperConstant(4, DRIVER4_PULSE,DRIVER4_DIR); 
 
     in_sweep=0;
+}
+
+void print_pos()
+{
+  
+  Serial.print("pos1:");
+  Serial.println(stepper1->pos_current);
+  delay(50);
+  Serial.print("pos2:");
+  Serial.println(stepper2->pos_current);
+  delay(50);
+  Serial.print("pos3:");
+  Serial.println(stepper3->pos_current);
+  delay(50);
+  Serial.print("pos4:");
+  Serial.println(stepper4->pos_current);
 }
 
 void debug_blast() {
@@ -131,20 +149,10 @@ void debug_blast() {
   }
 
   Serial.println("NOW: ");
-  Serial.println(stepper1->pos_current);
-  Serial.println(stepper2->pos_current);
-  Serial.println(stepper3->pos_current);
-  Serial.println(stepper4->pos_current);
+  print_pos();
 }
 
-void loop() {
-  //any_sweeping = 1; //(stepper1->sweeping || stepper2->sweeping || stepper3->sweeping); // & stepper3->sweeping & stepper4->sweeping;
-    
-  if (!in_sweep) {
-      // No sweep happening: do legacy (manual) ops, serial debugging, check for hold
-
-      interrupts();
- 
+void process_serial_commands() {
       // Check for serial commands
       if (Serial.available() > 0) {
         // read the incoming byte:
@@ -158,12 +166,25 @@ void loop() {
           sweep_to_zero();
         } else if (incomingByte=='?') {
           debug_blast();
+        } else if (incomingByte=='p') {
+          print_pos();
         }
       }
-  
-    legacy_loop(); // main loop from old front panel for manual ops
+}
+void loop() {
+  //any_sweeping = 1; //(stepper1->sweeping || stepper2->sweeping || stepper3->sweeping); // & stepper3->sweeping & stepper4->sweeping;
+    
+  if (!in_sweep) {
+      // No sweep happening: do legacy (manual) ops, serial debugging, check for hold
 
-    // Are any buttons held to sweep?
+      interrupts();
+ 
+      process_serial_commands();
+
+#if REAL_SYSTEM
+      legacy_loop(); // main loop from old front panel for manual ops
+
+    // Are any buttons held to initiate sweep?
     unsigned long now = millis();
     if (((now - lastDebounceTime1)>BUTTON_HOLD_MS) && dir1Current && (!any_sweeping) ) {
       sweep_to_start();
@@ -175,7 +196,10 @@ void loop() {
       sweep_to_end();
       //noInterrupts();
     } 
+#endif // REAL_SYSTEM
+
   } else { // In a sweep
+#if REAL_SYSTEM
     // Failsafe: touch right GO button to stop. Don't even debounce: bail immediately if any button action.
     if (digitalRead(m3go)==HIGH) {
       stepper1->stop_move(1);
@@ -185,6 +209,9 @@ void loop() {
       Serial.println("FAILSAFE STOP"); 
       in_sweep=0;    
     } else {
+#else
+    if (1) {
+#endif // REAL_SYSTEM
 
       unsigned long now = micros();
       if ( (now - sweep_snap_time ) >= SWEEP_SNAP_INTERVAL) {
