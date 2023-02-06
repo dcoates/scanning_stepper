@@ -151,24 +151,26 @@ void StepperState::debug_output(unsigned long msg) {
 
 void StepperState::do_update() {
 
-  if (!sweeping)
-    return;
-
   // All the timechecking functions use (now-target_event_time) > desired_duration, which should avoid overflow.
   unsigned long now = micros();
   unsigned long elapsed = (now-pulse_on_time);
 
   if (num_motor==1) { // TODO: use lims_present or derived class) {
-	unsigned char lims_current = digitalRead(limit1); // TODO: Specify port
+	unsigned char lims_current = digitalRead(limit2); // TODO: Specify port
 	if (lims_current != lims_state) {
 		lims_last_stable_time = now;
 		lims_state = lims_current;
 	} else {
-		if ((micros() - lims_last_stable_time) > LIMS_DEBOUNCE_PERIOD_US) {
+		if (((micros() - lims_last_stable_time) > LIMS_DEBOUNCE_PERIOD_US) && lims_current==0) {
 			stop_move(1);
+      Serial.print("Limit hit. Stopping");
 		}
 	}
   }
+  
+  if (!sweeping)
+    return;
+
   
   if (elapsed>=2048) { // Error checking: too long elapsed means something may have been missed
     bad_now = now;
