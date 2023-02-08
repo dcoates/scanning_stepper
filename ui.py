@@ -147,6 +147,12 @@ for nbutton,b1 in enumerate(b_coarsesL):
     b1.bind('<ButtonPress-1>',partial(coarse_start,1))
     b1.bind('<ButtonRelease-1>',partial(coarse_stop,1))
 
+# Row/column sizes: w is parent widget
+#w.columnconfigure(N, option=value, ...)
+#w.rowconfigure(N, option=value, ...)
+# minsize 	The column or row's minimum size in pixels. If there is nothing in the given column or row, it will not appear, even if you use this option.
+# pad 	A number of pixels that will be added to the given column or row, over and above the largest cell in the column or row.
+# weight : stretchable, weighted
 
 #b_do0 = ttk.Button(f, text="Move 0", command=mov0); b_do0.grid(row=3, column=2, padx=5, pady=5)
 #b_do1 = ttk.Button(f, text="Move 1", command=mov1); b_do1.grid(row=4, column=2, padx=5, pady=5)
