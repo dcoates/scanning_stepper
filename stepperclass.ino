@@ -15,8 +15,6 @@ void* luts[]={table1,table2,table2r};
 
 // StepperState implementation. Constructors just inits.
 StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir) {
-	pos_current=0;
-	mypos_end=0;
 	pulse_on_time=LONG_MAX;
 
   mypin_pulse = pin_pulse;
@@ -26,6 +24,15 @@ StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir) {
   pinMode(mypin_dir,OUTPUT);
 
   this->num_motor = num_motor;
+
+  reset_state();
+}
+
+void StepperState::reset_state()
+{
+	pos_current=0;
+	mypos_end=0;
+
   sweeping=0;
   steps_completed=0;
 

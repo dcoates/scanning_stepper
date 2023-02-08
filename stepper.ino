@@ -158,11 +158,11 @@ void process_serial_commands() {
         // read the incoming byte:
         int incomingByte = Serial.read();
 
-        if (incomingByte=='1') {
+        if (incomingByte=='S') {
           sweep_to_start();
-        } else if (incomingByte=='2') {
+        } else if (incomingByte=='E') {
           sweep_to_end();
-        } else if (incomingByte=='0') {
+        } else if (incomingByte=='Z') {
           sweep_to_zero();
         } else if (incomingByte=='?') {
           debug_blast();
@@ -292,7 +292,9 @@ void auto_calibrate() {
 
 void post_calibrate() {
   // After the calibration, set the positions to the "known" state
+  stepper1->reset_state();
   stepper1->pos_current=STEPPER1_START*STEPPER1_STEPS_PER_UNIT;
+  stepper3->reset_state();
   stepper3->pos_current=STEPPER3_START*STEPPER3_STEPS_PER_UNIT;
 }
 

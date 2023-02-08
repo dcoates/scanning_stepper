@@ -41,11 +41,11 @@ def check_serial():
 def getpos():
     ser.write(b'p');
 def mov0():
-    ser.write(b'0');
+    ser.write(b'Z');
 def mov1():
-    ser.write(b'1');
+    ser.write(b'S');
 def mov2():
-    ser.write(b'2');
+    ser.write(b'E');
 
 def cal1():
     ser.write(b'A')
@@ -132,10 +132,10 @@ l_p2 = ttk.Label(f, text="Pos2:"); l_p2.grid(row=3, column=2, padx=5, pady=5)
 l_p3 = ttk.Label(f, text="Pos3:"); l_p3.grid(row=4, column=2, padx=5, pady=5)
 l_p4 = ttk.Label(f, text="Pos4:"); l_p4.grid(row=5, column=2, padx=5, pady=5)
 
-b_finesR=[ttk.Button(f, text='%d>'%n) for n in range(4)]
-b_coarsesR=[ttk.Button(f, text='%d>>'%n) for n in range(4)]
-b_finesL=[ttk.Button(f, text='<%d'%n) for n in range(4)]
-b_coarsesL=[ttk.Button(f, text='<<%d'%n) for n in range(4)]
+b_finesR=[ttk.Button(f, text='%d>'%(n+1)) for n in range(4)]
+b_coarsesR=[ttk.Button(f, text='%d>>'%(n+1)) for n in range(4)]
+b_finesL=[ttk.Button(f, text='<%d'%(n+1)) for n in range(4)]
+b_coarsesL=[ttk.Button(f, text='<<%d'%(n+1)) for n in range(4)]
 for nbutton,b1 in enumerate(b_finesR):
     b1.grid(row=nbutton+2,column=3,padx=5,pady=5)
     b1.bind('<ButtonPress-1>',partial(fine_start,1))
@@ -166,9 +166,11 @@ b_cal2 = ttk.Button(f, text="Cal2", command=cal2,state='disable'); b_cal2.grid(r
 # pad 	A number of pixels that will be added to the given column or row, over and above the largest cell in the column or row.
 # weight : stretchable, weighted
 
-#b_do0 = ttk.Button(f, text="Move 0", command=mov0); b_do0.grid(row=3, column=2, padx=5, pady=5)
-#b_do1 = ttk.Button(f, text="Move 1", command=mov1); b_do1.grid(row=4, column=2, padx=5, pady=5)
-#b_do2 = ttk.Button(f, text="Move 2", command=mov2); b_do2.grid(row=5, column=2, padx=5, pady=5)
+b_do1 = ttk.Button(f, text="-", command=mov1, state="disable"); b_do1.grid(row=7, column=2, padx=5, pady=5)
+
+b_do1 = ttk.Button(f, text="Start", command=mov1); b_do1.grid(row=8, column=0, padx=5, pady=5)
+b_do0 = ttk.Button(f, text="Zero",  command=mov0); b_do0.grid(row=8, column=2, padx=5, pady=5)
+b_do2 = ttk.Button(f, text="End",   command=mov2); b_do2.grid(row=8, column=4, padx=5, pady=5)
 
 #b_test = ttk.Button(f, text="Test"); b_test.grid(row=5, column=3, padx=5, pady=5)
 #b_test.bind('<ButtonPress-1>',partial(fstart,1))

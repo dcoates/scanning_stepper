@@ -13,6 +13,7 @@ class StepperState
 public:
   StepperState(int num_motor, int pin_go, int pin_dir);
   inline void do_update();  // state machine to run every loop
+  void reset_state();
 
   void prepare_move(signed long pos_end, unsigned long move_duration, int mode);
   void start_move();
