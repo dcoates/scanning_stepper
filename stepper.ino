@@ -166,6 +166,10 @@ void process_serial_commands() {
           sweep_to_zero();
         } else if (incomingByte=='?') {
           debug_blast();
+        } else if (incomingByte=='A') {
+          auto_calibrate(); // Really a sweep of only two motors
+        } else if (incomingByte=='C') {
+          post_calibrate(); // Reset positions
         } else if (incomingByte=='p') {
           print_pos();
         }
@@ -269,6 +273,27 @@ void sweep_to(signed long pos1, signed long pos2, signed long pos3, unsigned lon
   step_trace_counter=0;
   pos_curr=0;
   sweep_snap_time=sweep_start_time-SWEEP_SNAP_INTERVAL; // So it'll trigger immediately on entry
+}
+
+void auto_calibrate() {
+  // TODO: This could be any number (infinite), since goes until limit switch. But for now
+  // Just use same magnitude as sweep.
+  stepper1->prepare_move( (signed long) (STEPPER1_START*STEPPER1_STEPS_PER_UNIT),0L,MODE_CALIBRATING);
+  stepper3->prepare_move( (signed long) (STEPPER3_START*STEPPER3_STEPS_PER_UNIT),0L,MODE_CALIBRATING);
+  stepper1->start_move();
+  stepper3->start_move();
+  sweep_start_time=millis();
+  
+  in_sweep=1; // so main loop knows we are sweeping
+  step_trace_counter=0;
+  pos_curr=0;
+  sweep_snap_time=sweep_start_time-SWEEP_SNAP_INTERVAL; // So it'll trigger immediately on entry
+}
+
+void post_calibrate() {
+  // After the calibration, set the positions to the "known" state
+  stepper1->pos_current=STEPPER1_START*STEPPER1_STEPS_PER_UNIT;
+  stepper3->pos_current=STEPPER3_START*STEPPER3_STEPS_PER_UNIT;
 }
 
 // Sweep modes: 1 (to start), 0 (to zero) 2 (to end)

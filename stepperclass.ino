@@ -155,28 +155,34 @@ void StepperState::do_update() {
   unsigned long now = micros();
   unsigned long elapsed = (now-pulse_on_time);
 
+#if REAL_SYSTEM
   if (num_motor==1) { // TODO: use lims_present or derived class) {
-	unsigned char lims_current = digitalRead(limit2); // TODO: Specify port
-	if (lims_current != lims_state) {
-		lims_last_stable_time = now;
-		lims_state = lims_current;
-	} else {
-		if (((micros() - lims_last_stable_time) > LIMS_DEBOUNCE_PERIOD_US) && lims_current==0) {
-			stop_move(1);
-      Serial.print("Limit hit. Stopping");
-		}
-	}
+    unsigned char lims_current = digitalRead(limit1); // TODO: Specify port
+    if (lims_current != lims_state) {
+      lims_last_stable_time = now;
+      lims_state = lims_current;
+    } else {
+      if (((micros() - lims_last_stable_time) > LIMS_DEBOUNCE_PERIOD_US) && lims_current==0) {
+#else
+   if ((num_motor==1) && (pos_current<-200) && (mode==MODE_CALIBRATING) ) {{{
+#endif //REAL
+        stop_move(1);
+        Serial.print("Limit hit. Stopping");
+        // Go a few steps back
+        prepare_move( pos_current-mydir*5, 0L, MODE_CALIBRATING_BACK); // This will reverse dir also and reset mypos_end, etc. //Reversing=mode 3
+        start_move();  
+        elapsed=0; // This will force to exit this do_update() right now, and come back later: time for stop_pulse, then later move pulses
+      }
+    }
   }
   
-  if (!sweeping)
+  if (!sweeping) // TODO: Put this before limit switch checking for efficiency (on non-limited motors)
     return;
-
   
   if (elapsed>=2048) { // Error checking: too long elapsed means something may have been missed
     bad_now = now;
     bad_elapsed = elapsed;
     bad_potime = pulse_on_time;
-
   };
      
 	if ( elapsed > high_time ) {  // time to lower an ON pulse?

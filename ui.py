@@ -47,6 +47,15 @@ def mov1():
 def mov2():
     ser.write(b'2');
 
+def cal1():
+    ser.write(b'A')
+    b_cal2.configure(state="enable")
+    b_cal1.configure(state="disable")
+def cal2():
+    ser.write(b'C')
+    b_cal2.configure(state="enable")
+    b_cal1.configure(state="enable")
+
 def start(portname):
     global ser
     #port=list_ports.curselection();
@@ -106,7 +115,7 @@ def coarse_stop(arg,evnt):
     going=False
     
 root = Tk()
-root.title('Scanning WFS - Simple UI')
+root.title('Scanning WFS - Simple Controller UI')
 root.geometry('768x512')
 f = ttk.Frame(root, width=512); f.grid()
 
@@ -146,6 +155,9 @@ for nbutton,b1 in enumerate(b_coarsesL):
     b1.grid(row=nbutton+2,column=0,padx=5,pady=5)
     b1.bind('<ButtonPress-1>',partial(coarse_start,1))
     b1.bind('<ButtonRelease-1>',partial(coarse_stop,1))
+
+b_cal1 = ttk.Button(f, text="Cal1", command=cal1); b_cal1.grid(row=0, column=0, padx=5, pady=5)
+b_cal2 = ttk.Button(f, text="Cal2", command=cal2,state='disable'); b_cal2.grid(row=0, column=1, padx=5, pady=5)
 
 # Row/column sizes: w is parent widget
 #w.columnconfigure(N, option=value, ...)
