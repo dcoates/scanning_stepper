@@ -1,5 +1,12 @@
 #define MIN_PULSE_DUR_USEC 5 // TESTING:1SEC 3 //minimum 2.5 usec. 3 usec to be safe
 
+#define MODE_TO_ZERO 0
+#define MODE_TO_START 1
+#define MODE_TO_END 2
+#define MODE_REVERSING 3 // Hack for sinusoidal that needs to switch directions
+
+#define MODE_CALIBRATING 4 // Go until the Limit slams, then..
+#define MODE_CALIBRATING_BACK 5 // Reverse a smidgen to be off limit switch
 
 class StepperState
 {
