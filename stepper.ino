@@ -183,7 +183,7 @@ void handle_motion(StepperState* which_motor, signed long amount) {
   in_sweep=0;
 
   if (amount<0) 
-    which_motor->smooth_start(-1,-amount);
+    which_motor->smooth_start(0,-amount);
   else // positive
     which_motor->smooth_start(1,amount);
 
