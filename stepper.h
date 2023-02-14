@@ -24,6 +24,10 @@ public:
   void stop_move(unsigned int lower_pulse);  // Stop and cancel future movements.
   virtual unsigned int get_next_interval()=0;
 
+  // These use tone, like the legacy code:
+  void smooth_start(int dir, int speed);
+  void smooth_stop();
+
   void debug_output(unsigned long msg);
   
   unsigned int sweeping;	// Public for global access

@@ -102,30 +102,32 @@ def start(portname):
     #b.configure(text='Start!', command=start)
     #l['text'] = "Answer: " + str(answer) if answer else "No Answer"
 
-going=False
+going=True
 def doit(arg):
     global going
     if going:
         print(arg,end=' ',flush=True)
-        ser.write(arg)
-        root.after(100, partial(doit,arg))
+        #ser.write(arg)
+        #root.after(100, partial(doit,arg))
 def fine_start(arg,evnt):
     global going
-    #print( arg, " !!!  ", what )
+    print( arg, " !!!  " )
     going=True
-    root.after(100, partial(doit,arg))
+    #root.after(100, partial(doit,arg))
 def fine_stop(arg,evnt):
     global going
-    going=False
+    ser.write('x')
+    #going=False
     
 def coarse_start(arg,evnt):
     global going
-    #print( arg, " !!!  ", what )
+    print( arg, " !!!  " )
     going=True
-    root.after(100, partial(doit,arg))
+    #root.after(100, partial(doit,arg))
 def coarse_stop(arg,evnt):
     global going
-    going=False
+    ser.write('x')
+    #going=False
     
 root = Tk()
 root.title('Scanning WFS - Simple Controller UI')
@@ -145,12 +147,13 @@ l_p2 = ttk.Label(f, text="Pos2:"); l_p2.grid(row=3, column=2, padx=5, pady=5)
 l_p3 = ttk.Label(f, text="Pos3:"); l_p3.grid(row=4, column=2, padx=5, pady=5)
 l_p4 = ttk.Label(f, text="Pos4:"); l_p4.grid(row=5, column=2, padx=5, pady=5)
 
-b_finesR=[ttk.Button(f, text='%d>'%(n+1)) for n in range(4)]
-b_coarsesR=[ttk.Button(f, text='%d>>'%(n+1)) for n in range(4)]
-b_finesL=[ttk.Button(f, text='<%d'%(n+1)) for n in range(4)]
-b_coarsesL=[ttk.Button(f, text='<<%d'%(n+1)) for n in range(4)]
+b_finesR=[ttk.Button(f, text='%d+'%(n+1)) for n in range(4)]
+b_coarsesR=[ttk.Button(f, text='%d++'%(n+1)) for n in range(4)]
+b_finesL=[ttk.Button(f, text='-%d'%(n+1)) for n in range(4)]
+b_coarsesL=[ttk.Button(f, text='--%d'%(n+1)) for n in range(4)]
 
-codes=[[b'Q',b'q',b'w',b'W'], [b'E',b'e',b'r',b'R'],[b'Q',b'q',b'w',b'W'], [b'E',b'e',b'r',b'R'] ]
+# Each one goes: --,-,+,++ . They are in the top letter row of an asdf keyboard. Caps for big.
+codes=[[b'Q',b'q',b'w',b'W'], [b'E',b'e',b'r',b'R'],[b'T',b't',b'y',b'Y'], [b'U',b'u',b'i',b'I'] ]
 
 for nbutton,b1 in enumerate(b_coarsesL):
     b1.grid(row=nbutton+2,column=0,padx=5,pady=5)
@@ -191,15 +194,15 @@ b_cal0 = ttk.Button(f, text="Zero Pos.", command=zero_pos,state='enable'); b_cal
 
 b_lVert = ttk.Label(f, text="Vertical:"); b_lVert.grid(row=7, column=2, padx=5, pady=10)
 
-b_do1 = ttk.Button(f, text="Start", command=mov1); b_do1.grid(row=8, column=0, padx=5, pady=5)
-b_do0 = ttk.Button(f, text="Zero",  command=mov0); b_do0.grid(row=8, column=2, padx=5, pady=5)
-b_do2 = ttk.Button(f, text="End",   command=mov2); b_do2.grid(row=8, column=4, padx=5, pady=5)
+b_do1 = ttk.Button(f, text="Sweep Start", command=mov1); b_do1.grid(row=8, column=0, padx=5, pady=5)
+b_do0 = ttk.Button(f, text="Sweep Zero",  command=mov0); b_do0.grid(row=8, column=2, padx=5, pady=5)
+b_do2 = ttk.Button(f, text="Sweep End",   command=mov2); b_do2.grid(row=8, column=4, padx=5, pady=5)
 
 b_lHoriz = ttk.Label(f, text="Horizontal:"); b_lHoriz.grid(row=9, column=2, padx=5, pady=10)
 
-b_Hdo1 = ttk.Button(f, text="Start", command=movH1); b_Hdo1.grid(row=10, column=0, padx=5, pady=5)
-b_Hdo0 = ttk.Button(f, text="Zero",  command=movH0); b_Hdo0.grid(row=10, column=2, padx=5, pady=5)
-b_Hdo2 = ttk.Button(f, text="End",   command=movH2); b_Hdo2.grid(row=10, column=4, padx=5, pady=5)
+b_Hdo1 = ttk.Button(f, text="Sweep Start", command=movH1); b_Hdo1.grid(row=10, column=0, padx=5, pady=5)
+b_Hdo0 = ttk.Button(f, text="Sweep Zero",  command=movH0); b_Hdo0.grid(row=10, column=2, padx=5, pady=5)
+b_Hdo2 = ttk.Button(f, text="Sweep End",   command=movH2); b_Hdo2.grid(row=10, column=4, padx=5, pady=5)
 
 #b_test = ttk.Button(f, text="Test"); b_test.grid(row=5, column=3, padx=5, pady=5)
 #b_test.bind('<ButtonPress-1>',partial(fstart,1))

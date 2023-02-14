@@ -6,12 +6,13 @@
 // The second depends on the units (1 revolution=360 deg, X mm, etc..). BUT
 // The relationship isn't so clear based on the other mechanical stages, so expressing as steps
 // (and measuring empirically) is more straightforward.
-#define STEPPER1_STEPS_PER_UNIT (200.0/2.0) /* Degrees. Empirical: not sure why "/4" */
+#define STEPPER1_STEPS_PER_UNIT (200.0/2.0) 
 #define STEPPER2_STEPS_PER_UNIT 1
 // Old stepper2: (8000.0/4.0)  
 #define STEPPER3_STEPS_PER_UNIT 1
 // Old stepper3 DIP(8000.0/4.0)
-//#define STEPPER4_STEPS_PER_UNIT (1600.0/4.0) /* MM */
+//#define STEPPER4_STEPS_PER_UNIT (1600.0/4.0) /* Degrees. Empirical: not sure why "/4" */
+#define STEPPER4_STEPS_PER_UNIT 1
 
 // Zero/middle point for Stepper1 is at 1300 steps away from "0" (due to non-linear scissors)
 // Zero/middle point for Stepper2?
@@ -21,13 +22,13 @@
 #define STEPPER1_START (-35+13) 
 #define STEPPER2_START -800
 #define STEPPER3_START -1000
-//#define STEPPER4_START
+#define STEPPER4_START (5 * 1600.0/4.0 )
 
 // Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (35 + 13)
 #define STEPPER2_END 0
 #define STEPPER3_END 1000
-//#define STEPPER4_END
+#define STEPPER4_END 20
 
 // -30 to +30 : 30.36mm
 
@@ -35,7 +36,10 @@
 #define BUTTON_HOLD_MS 1500
 #define LIMS_DEBOUNCE_PERIOD_US 2000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
 
-#define REAL_SYSTEM 1 // On the real hardware, this should be 1. If 0, we are probably debugging on Arduino w/o any hardware.
+#define NUDGE_LARGE 1000
+#define NUDGE_SMALL 100
+
+#define REAL_SYSTEM 0 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
 
 // These are shared between legacy.ino and this file
 // So that we can peek at the buttons
@@ -152,6 +156,7 @@ void debug_blast() {
   print_pos();
 }
 
+#if 0 // OLD WAY
 void handle_motion(StepperState* which_motor) {
   int extent=Serial.read();
   signed long amount=0;
@@ -171,21 +176,61 @@ void handle_motion2(StepperState* which_motor, signed long amount) {
   in_sweep=1;
   which_motor->relative_sweep(amount, 1); // TODO MODE
 };
+#endif // OLD_WAY
+
+void handle_motion(StepperState* which_motor, signed long amount) {
+  // Shouldn't look like a sweep. We want interrupts running, etc.
+  in_sweep=0;
+
+  if (amount<0) 
+    which_motor->smooth_start(-1,-amount);
+  else // positive
+    which_motor->smooth_start(1,amount);
+
+};
+
+void smooth_stop() {
+  stepper1->smooth_stop();
+  stepper2->smooth_stop();
+  stepper3->smooth_stop();
+  stepper4->smooth_stop();
+
+  in_sweep=0;
+};
 
 void process_serial_commands() {
+  
+#if 0
       // Check for serial commands
       if (Serial.available() > 0) {
         // read the incoming byte:
         int incomingByte = Serial.read();
 
+        // Sweeps: (vertical, then horizontal)
         if (incomingByte=='S') {
           sweep_to_start();
         } else if (incomingByte=='E') {
           sweep_to_end();
         } else if (incomingByte=='Z') {
           sweep_to_zero();
+        if (incomingByte=='s') {
+          sweep_horizontal(
+       (signed long) (STEPPER4_START*STEPPER4_STEPS_PER_UNIT),
+       SWEEP_TIME_SEC*1000000.0,1);
+        } else if (incomingByte=='e') {
+          sweep_horizontal(
+       (signed long) (STEPPER4_END*STEPPER4_STEPS_PER_UNIT),
+       SWEEP_TIME_SEC*1000000.0,2); }
+        } else if (incomingByte=='z') {
+          sweep_horizontal(
+       (signed long) 0,
+       SWEEP_TIME_SEC*1000000.0,3);
+
+        // Debug/info
         } else if (incomingByte=='?') {
           debug_blast();
+        } else if (incomingByte=='p') {
+          print_pos();
 
         // Calibration:
         } else if (incomingByte=='A') {
@@ -198,21 +243,34 @@ void process_serial_commands() {
         }  else if (incomingByte=='1') {
             handle_motion(stepper1);
         }
-        else if (incomingByte=='Q') {handle_motion2(stepper1,(signed long)-50);}
-        else if (incomingByte=='q') {handle_motion2(stepper1,(signed long)-5);}
-        else if (incomingByte=='w') {handle_motion2(stepper1,(signed long)5);}
-        else if (incomingByte=='W') {handle_motion2(stepper1,(signed long)50);}
 
-        else if (incomingByte=='E') {handle_motion2(stepper2,(signed long)-50);}
-        else if (incomingByte=='e') {handle_motion2(stepper2,(signed long)-5);}
-        else if (incomingByte=='r') {handle_motion2(stepper2,(signed long)5);}
-        else if (incomingByte=='R') {handle_motion2(stepper2,(signed long)50);}
+        // Nudge commands: (follow top row of ASDF keyboard. -/+, then large/small is case
+        else if (incomingByte=='Q') {handle_motion(stepper1,(signed long)-NUDGE_LARGE);}
+        else if (incomingByte=='q') {handle_motion(stepper1,(signed long)-NUDGE_SMALL);}
+        else if (incomingByte=='w') {handle_motion(stepper1,(signed long)NUDGE_SMALL);}
+        else if (incomingByte=='W') {handle_motion(stepper1,(signed long)NUDGE_LARGE);}
 
-        else if (incomingByte=='p') {
-          print_pos();
-        }
-      }
+        else if (incomingByte=='E') {handle_motion(stepper2,(signed long)-NUDGE_LARGE);}
+        else if (incomingByte=='e') {handle_motion(stepper2,(signed long)-NUDGE_SMALL);}
+        else if (incomingByte=='r') {handle_motion(stepper2,(signed long)NUDGE_SMALL);}
+        else if (incomingByte=='R') {handle_motion(stepper2,(signed long)NUDGE_LARGE);}
+
+        else if (incomingByte=='T') {handle_motion(stepper3,(signed long)-NUDGE_LARGE);}
+        else if (incomingByte=='t') {handle_motion(stepper3,(signed long)-NUDGE_SMALL);}
+        else if (incomingByte=='y') {handle_motion(stepper3,(signed long)NUDGE_SMALL);}
+        else if (incomingByte=='Y') {handle_motion(stepper3,(signed long)NUDGE_LARGE);}
+
+        else if (incomingByte=='U') {handle_motion(stepper4,(signed long)-NUDGE_LARGE);}
+        else if (incomingByte=='u') {handle_motion(stepper4,(signed long)-NUDGE_SMALL);}
+        else if (incomingByte=='i') {handle_motion(stepper4,(signed long)NUDGE_SMALL);}
+        else if (incomingByte=='I') {handle_motion(stepper4,(signed long)NUDGE_LARGE);}
+
+        else if (incomingByte=='x') {smooth_stop();}
+
+    }
+#endif //0
 }
+
 void loop() {
   //any_sweeping = 1; //(stepper1->sweeping || stepper2->sweeping || stepper3->sweeping); // & stepper3->sweeping & stepper4->sweeping;
     
@@ -247,6 +305,13 @@ void loop() {
       stepper1->stop_move(1);
       stepper2->stop_move(1);
       stepper3->stop_move(1); 
+      stepper4->stop_move(1); 
+
+      stepper1->smooth_stop();
+      stepper2->smooth_stop();
+      stepper3->smooth_stop();
+      stepper4->smooth_stop();
+
       interrupts(); 
       Serial.println("FAILSAFE STOP"); 
       in_sweep=0;    
@@ -305,6 +370,19 @@ void sweep_to(signed long pos1, signed long pos2, signed long pos3, unsigned lon
   stepper1->start_move();
   stepper2->start_move();
   stepper3->start_move();
+  sweep_start_time=millis();
+  
+  in_sweep=1; // so main loop knows we are sweeping
+  step_trace_counter=0;
+  pos_curr=0;
+  sweep_snap_time=sweep_start_time-SWEEP_SNAP_INTERVAL; // So it'll trigger immediately on entry
+}
+
+void sweep_horizontal(signed long pos, unsigned long duration, int mode) {
+  Serial.print("Sweep H");
+
+  stepper4->prepare_move( pos, duration, mode);
+  stepper4->start_move();
   sweep_start_time=millis();
   
   in_sweep=1; // so main loop knows we are sweeping

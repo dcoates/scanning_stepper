@@ -141,6 +141,17 @@ void StepperState::stop_move(unsigned int lower_pulse) {
   Serial.println(" stop");
 };
 
+void StepperState::smooth_start(int dir, int speed)
+{
+		digitalWrite(mypin_dir,dir);
+		tone(mypin_pulse,speed);
+}
+
+void StepperState::smooth_stop()
+{
+  noTone(mypin_pulse);
+}
+
 #if DEBUG_STEPPER
 void StepperState::debug_output(unsigned long msg) {
     Serial.print(msg);  // Before was trying to pass in msg string
@@ -160,6 +171,9 @@ void StepperState::debug_output(unsigned long msg) {
 #endif
 
 void StepperState::do_update() {
+  
+  if (!sweeping) // TODO: Put this before limit switch checking for efficiency (on non-limited motors)
+    return;
 
   // All the timechecking functions use (now-target_event_time) > desired_duration, which should avoid overflow.
   unsigned long now = micros();
@@ -168,14 +182,14 @@ void StepperState::do_update() {
 #if REAL_SYSTEM
   if (num_motor==1) { // TODO: use lims_present or derived class) {
     unsigned char lims_current = digitalRead(limit1); // TODO: Specify port
-    if ((lims_current != lims_state) || ( (now-last_limit_read) > LIMS_DEBOUNCE_PERIOD_US)) {
+    if ((lims_current != lims_state) || ( (now-last_limit_read) > LIMS_DEBOUNCE_PERIOD_US/10.0)) {
       lims_last_stable_time = now;
       last_limit_read = now;
       lims_state = lims_current;
     } else {
      
-      // CALIBRATING_BACK mode is allowed to move during limit switch, since we are still stuck on it and need to move a few
-      // steps back the other way.
+      // CALIBRATING_BACK mode is allowed to move even when limit switch activate,
+      // since we are probably stuck on it and need to move a few steps back the other way.
       if (((micros() - lims_last_stable_time) > LIMS_DEBOUNCE_PERIOD_US) && (lims_current==0) && (mode!=MODE_CALIBRATING_BACK) ) {
 #else
    if ((num_motor==1) && (pos_current<-200) && (mode==MODE_CALIBRATING) ) {{{
@@ -190,9 +204,6 @@ void StepperState::do_update() {
       }
     }
   }
-  
-  if (!sweeping) // TODO: Put this before limit switch checking for efficiency (on non-limited motors)
-    return;
   
   if (elapsed>=2048) { // Error checking: too long elapsed means something may have been missed
     bad_now = now;
