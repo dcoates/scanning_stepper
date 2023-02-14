@@ -9,7 +9,7 @@ unsigned int* table_info[]={table1_info,table2_info,table2r_info};
 void* luts[]={table1,table2,table2r};
 
 #define DEBUG_STEPPER 0
-#define DEBUG_MOTOR 3 // Which motor to save time intervals for
+#define DEBUG_MOTOR 1 // Which motor to save time intervals for
 #define CIRCULAR_DEBUG_BUFFER 1  //set to "0" to only get first n samples, otherwise is circular buffer (to observe last samples)
 
 
@@ -70,7 +70,6 @@ void StepperState::prepare_move(signed long pos_end, unsigned long move_duration
     mydir=1; // ? TODO
     total_steps = 0;
 	}
-
   this->mode = mode;
   
   step_trace_counter=0; // DBG
@@ -88,9 +87,11 @@ void StepperState::prepare_move(signed long pos_end, unsigned long move_duration
   Serial.print(" ");
   Serial.print(move_duration);
   Serial.print(" ");
-  Serial.print(total_steps);
+  Serial.print(pos_current);
   Serial.print(" ");
-  Serial.print(this->step_interval_us);
+  Serial.print(mypos_end);
+  Serial.print(" ");
+  Serial.print(interval_next);
   Serial.println(" ");
 #endif
 };
@@ -102,13 +103,8 @@ void StepperState::start_move() {
     digitalWrite(mypin_pulse,HIGH);
     high_time = MIN_PULSE_DUR_USEC; // Will set to low after this much time (minimum)
     pulse_on_time = micros(); // arm first movement: NOW!
-    
-    steps_completed=0;
 
-	// TODO: This should go with LUT only
-    table_counter=0;
     interval_next = int( pgm_read_byte_near(table_ptr+0) );
-    
     //interval_next = int(step_interval_us); // start out with theoretical interval
     error=0.0;
     
@@ -120,6 +116,13 @@ void StepperState::start_move() {
     lims_last_stable_time=micros(); 
   }
 };
+
+void StepperState::relative_sweep(signed long amount, int mode) {
+  prepare_move( (signed long) (pos_current+(signed long)amount),
+    SWEEP_TIME_SEC*1000000.0,
+    mode); // TODO: MODE
+  start_move();
+}
 
 void StepperState::stop_pulse() {
     digitalWrite(mypin_pulse,LOW);
@@ -146,7 +149,7 @@ void StepperState::debug_output(unsigned long msg) {
     Serial.print(" ");
     Serial.print(pos_current);
     Serial.print(" ");
-    Serial.print(mypos_end);S
+    Serial.print(mypos_end);
     Serial.print(" ");
     Serial.println(step_interval_us);
     Serial.print(" ");
@@ -165,20 +168,25 @@ void StepperState::do_update() {
 #if REAL_SYSTEM
   if (num_motor==1) { // TODO: use lims_present or derived class) {
     unsigned char lims_current = digitalRead(limit1); // TODO: Specify port
-    if (lims_current != lims_state) {
+    if ((lims_current != lims_state) || ( (now-last_limit_read) > LIMS_DEBOUNCE_PERIOD_US)) {
       lims_last_stable_time = now;
+      last_limit_read = now;
       lims_state = lims_current;
     } else {
-      if (((micros() - lims_last_stable_time) > LIMS_DEBOUNCE_PERIOD_US) && lims_current==0) {
+     
+      // CALIBRATING_BACK mode is allowed to move during limit switch, since we are still stuck on it and need to move a few
+      // steps back the other way.
+      if (((micros() - lims_last_stable_time) > LIMS_DEBOUNCE_PERIOD_US) && (lims_current==0) && (mode!=MODE_CALIBRATING_BACK) ) {
 #else
    if ((num_motor==1) && (pos_current<-200) && (mode==MODE_CALIBRATING) ) {{{
 #endif //REAL
         stop_move(1);
         Serial.print("Limit hit. Stopping");
         // Go a few steps back
-        prepare_move( pos_current-mydir*5, 0L, MODE_CALIBRATING_BACK); // This will reverse dir also and reset mypos_end, etc. //Reversing=mode 3
-        start_move();  
-        elapsed=0; // This will force to exit this do_update() right now, and come back later: time for stop_pulse, then later move pulses
+        //prepare_move( pos_current-mydir*5, 0L, MODE_CALIBRATING_BACK); // This will reverse dir also and reset mypos_end, etc. //Reversing=mode 3
+        //start_move();  
+        //elapsed=0; // This will force to exit this do_update() right now, and come back later: time for stop_pulse, then later move pulses
+        // We'll exit immediately since sweeping set to 0 in stop
       }
     }
   }
@@ -190,6 +198,7 @@ void StepperState::do_update() {
     bad_now = now;
     bad_elapsed = elapsed;
     bad_potime = pulse_on_time;
+    //Serial.print("Too long elapsed.");
   };
      
 	if ( elapsed > high_time ) {  // time to lower an ON pulse?

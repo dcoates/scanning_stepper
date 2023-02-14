@@ -45,16 +45,28 @@ def mov0():
 def mov1():
     ser.write(b'S');
 def mov2():
-    ser.write(b'E');
+    ser.write(b'F');
 
+def movH0():
+    ser.write(b'z');
+def movH1():
+    ser.write(b's');
+def movH2():
+    ser.write(b'f');
+    
 def cal1():
     ser.write(b'A')
     b_cal2.configure(state="enable")
-    b_cal1.configure(state="disable")
+    #b_cal1.configure(state="disable")
 def cal2():
     ser.write(b'C')
     b_cal2.configure(state="enable")
     b_cal1.configure(state="enable")
+def zero_pos():
+    ser.write(b'0')
+    b_cal2.configure(state="enable")
+    b_cal1.configure(state="enable")
+
 
 def start(portname):
     global ser
@@ -95,12 +107,13 @@ def doit(arg):
     global going
     if going:
         print(arg,end=' ',flush=True)
-        root.after(20, partial(doit,arg+1))
+        ser.write(arg)
+        root.after(100, partial(doit,arg))
 def fine_start(arg,evnt):
     global going
     #print( arg, " !!!  ", what )
     going=True
-    root.after(20, partial(doit,arg+1))
+    root.after(100, partial(doit,arg))
 def fine_stop(arg,evnt):
     global going
     going=False
@@ -109,14 +122,14 @@ def coarse_start(arg,evnt):
     global going
     #print( arg, " !!!  ", what )
     going=True
-    root.after(20, partial(doit,arg+1))
+    root.after(100, partial(doit,arg))
 def coarse_stop(arg,evnt):
     global going
     going=False
     
 root = Tk()
 root.title('Scanning WFS - Simple Controller UI')
-root.geometry('768x512')
+root.geometry('650x512')
 f = ttk.Frame(root, width=512); f.grid()
 
 str_port=StringVar();
@@ -136,28 +149,36 @@ b_finesR=[ttk.Button(f, text='%d>'%(n+1)) for n in range(4)]
 b_coarsesR=[ttk.Button(f, text='%d>>'%(n+1)) for n in range(4)]
 b_finesL=[ttk.Button(f, text='<%d'%(n+1)) for n in range(4)]
 b_coarsesL=[ttk.Button(f, text='<<%d'%(n+1)) for n in range(4)]
-for nbutton,b1 in enumerate(b_finesR):
-    b1.grid(row=nbutton+2,column=3,padx=5,pady=5)
-    b1.bind('<ButtonPress-1>',partial(fine_start,1))
-    b1.bind('<ButtonRelease-1>',partial(fine_stop,1))
 
-for nbutton,b1 in enumerate(b_coarsesR):
-    b1.grid(row=nbutton+2,column=4,padx=5,pady=5)
-    b1.bind('<ButtonPress-1>',partial(coarse_start,1))
-    b1.bind('<ButtonRelease-1>',partial(coarse_stop,1))
-
-for nbutton,b1 in enumerate(b_finesL):
-    b1.grid(row=nbutton+2,column=1,padx=5,pady=5)
-    b1.bind('<ButtonPress-1>',partial(fine_start,1))
-    b1.bind('<ButtonRelease-1>',partial(fine_stop,1))
+codes=[[b'Q',b'q',b'w',b'W'], [b'E',b'e',b'r',b'R'],[b'Q',b'q',b'w',b'W'], [b'E',b'e',b'r',b'R'] ]
 
 for nbutton,b1 in enumerate(b_coarsesL):
     b1.grid(row=nbutton+2,column=0,padx=5,pady=5)
-    b1.bind('<ButtonPress-1>',partial(coarse_start,1))
-    b1.bind('<ButtonRelease-1>',partial(coarse_stop,1))
+    b1.bind('<ButtonPress-1>',partial(coarse_start,codes[nbutton][0]))
+    b1.bind('<ButtonRelease-1>',partial(coarse_stop,codes[nbutton][0]))
+ 
+for nbutton,b1 in enumerate(b_finesL):
+    b1.grid(row=nbutton+2,column=1,padx=5,pady=5)
+    b1.bind('<ButtonPress-1>',partial(fine_start,codes[nbutton][1]))
+    b1.bind('<ButtonRelease-1>',partial(fine_stop,codes[nbutton][1]))
+    
+for nbutton,b1 in enumerate(b_finesR):
+    b1.grid(row=nbutton+2,column=3,padx=5,pady=5)
+    b1.bind('<ButtonPress-1>',partial(fine_start,codes[nbutton][2] )  )
+    b1.bind('<ButtonRelease-1>',partial(fine_stop,codes[nbutton][2] ) )
+
+for nbutton,b1 in enumerate(b_coarsesR):
+    b1.grid(row=nbutton+2,column=4,padx=5,pady=5)
+    b1.bind('<ButtonPress-1>',partial(coarse_start,codes[nbutton][3]))
+    b1.bind('<ButtonRelease-1>',partial(coarse_stop,codes[nbutton][3]))
+
+ 
+ # 2 letter commands:
+ #   b1.bind('<ButtonRelease-1>',partial(coarse_stop,'%dM'%(nbutton+1)))
 
 b_cal1 = ttk.Button(f, text="Cal1", command=cal1); b_cal1.grid(row=0, column=0, padx=5, pady=5)
-b_cal2 = ttk.Button(f, text="Cal2", command=cal2,state='disable'); b_cal2.grid(row=0, column=1, padx=5, pady=5)
+b_cal2 = ttk.Button(f, text="Cal unlimit", command=cal2,state='enable'); b_cal2.grid(row=0, column=1, padx=5, pady=5)
+b_cal0 = ttk.Button(f, text="Zero Pos.", command=zero_pos,state='enable'); b_cal0.grid(row=0, column=3, padx=5, pady=5)
 
 # Row/column sizes: w is parent widget
 #w.columnconfigure(N, option=value, ...)
@@ -166,11 +187,19 @@ b_cal2 = ttk.Button(f, text="Cal2", command=cal2,state='disable'); b_cal2.grid(r
 # pad 	A number of pixels that will be added to the given column or row, over and above the largest cell in the column or row.
 # weight : stretchable, weighted
 
-b_do1 = ttk.Button(f, text="-", command=mov1, state="disable"); b_do1.grid(row=7, column=2, padx=5, pady=5)
+# b_do1 = ttk.Button(f, text="-", command=mov1, state="disable"); b_do1.grid(row=7, column=2, padx=5, pady=5)
+
+b_lVert = ttk.Label(f, text="Vertical:"); b_lVert.grid(row=7, column=2, padx=5, pady=10)
 
 b_do1 = ttk.Button(f, text="Start", command=mov1); b_do1.grid(row=8, column=0, padx=5, pady=5)
 b_do0 = ttk.Button(f, text="Zero",  command=mov0); b_do0.grid(row=8, column=2, padx=5, pady=5)
 b_do2 = ttk.Button(f, text="End",   command=mov2); b_do2.grid(row=8, column=4, padx=5, pady=5)
+
+b_lHoriz = ttk.Label(f, text="Horizontal:"); b_lHoriz.grid(row=9, column=2, padx=5, pady=10)
+
+b_Hdo1 = ttk.Button(f, text="Start", command=movH1); b_Hdo1.grid(row=10, column=0, padx=5, pady=5)
+b_Hdo0 = ttk.Button(f, text="Zero",  command=movH0); b_Hdo0.grid(row=10, column=2, padx=5, pady=5)
+b_Hdo2 = ttk.Button(f, text="End",   command=movH2); b_Hdo2.grid(row=10, column=4, padx=5, pady=5)
 
 #b_test = ttk.Button(f, text="Test"); b_test.grid(row=5, column=3, padx=5, pady=5)
 #b_test.bind('<ButtonPress-1>',partial(fstart,1))

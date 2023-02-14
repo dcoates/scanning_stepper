@@ -7,6 +7,7 @@
 
 #define MODE_CALIBRATING 4 // Go until the Limit slams, then..
 #define MODE_CALIBRATING_BACK 5 // Reverse a smidgen to be off limit switch
+#define STEPS_TO_REVERSE_OFF_LIMIT 100
 
 class StepperState
 {
@@ -17,6 +18,8 @@ public:
 
   void prepare_move(signed long pos_end, unsigned long move_duration, int mode);
   void start_move();
+  void relative_sweep(signed long amount, int mode);
+
   void stop_pulse(); // Immediately set pulse low
   void stop_move(unsigned int lower_pulse);  // Stop and cancel future movements.
   virtual unsigned int get_next_interval()=0;
@@ -35,7 +38,8 @@ public:
   unsigned char lims_present=0; // yes or no?
   unsigned char lims_state=1;
   unsigned long lims_last_stable_time=-1; // For debounce
-
+  unsigned long last_limit_read=-1; // so that turn on/off doesn't kill it after a hiatus
+  
   // These only refer to tables, so should be in derived class but are here
   // for convenience
   uint8_t *table_ptr;

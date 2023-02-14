@@ -1,4 +1,4 @@
-#include "stepper.h"
+  #include "stepper.h"
 #include "driver_unit.h"
 #include "digitalWriteFast.h"
 
@@ -35,7 +35,7 @@
 #define BUTTON_HOLD_MS 1500
 #define LIMS_DEBOUNCE_PERIOD_US 2000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
 
-#define REAL_SYSTEM 0 // On the real hardware, this should be 1. If 0, we are probably debugging on Arduino w/o any hardware.
+#define REAL_SYSTEM 1 // On the real hardware, this should be 1. If 0, we are probably debugging on Arduino w/o any hardware.
 
 // These are shared between legacy.ino and this file
 // So that we can peek at the buttons
@@ -70,7 +70,7 @@ unsigned long bad_potime;
 
 // Every 100 ms: 10 * 3
 #define POS_BUF_SIZE 32 * 5
-#define SWEEP_SNAP_INTERVAL 100000
+#define SWEEP_SNAP_INTERVAL (3000000/7)
 unsigned int pos_curr=0;
 signed long pos_buffer[POS_BUF_SIZE]; // Store tiime + pos for each motor
 unsigned long sweep_snap_time=0;
@@ -152,6 +152,26 @@ void debug_blast() {
   print_pos();
 }
 
+void handle_motion(StepperState* which_motor) {
+  int extent=Serial.read();
+  signed long amount=0;
+  
+  if (extent=='m')  amount=-5;
+  else if (extent=='M') amount=-50;
+  else if (extent=='p') amount=5;
+  else if (extent=='P') amount=50;
+
+  in_sweep=1;
+  which_motor->relative_sweep(amount,1);  // TODO MODE
+  Serial.println(amount);
+}
+
+void handle_motion2(StepperState* which_motor, signed long amount) {
+  // USe 1-character sgs
+  in_sweep=1;
+  which_motor->relative_sweep(amount, 1); // TODO MODE
+};
+
 void process_serial_commands() {
       // Check for serial commands
       if (Serial.available() > 0) {
@@ -166,11 +186,29 @@ void process_serial_commands() {
           sweep_to_zero();
         } else if (incomingByte=='?') {
           debug_blast();
+
+        // Calibration:
         } else if (incomingByte=='A') {
           auto_calibrate(); // Really a sweep of only two motors
         } else if (incomingByte=='C') {
-          post_calibrate(); // Reset positions
-        } else if (incomingByte=='p') {
+          post_calibrate(); // Reset positions, move back off limit
+        } else if (incomingByte=='0') {
+          zero_positions();
+
+        }  else if (incomingByte=='1') {
+            handle_motion(stepper1);
+        }
+        else if (incomingByte=='Q') {handle_motion2(stepper1,(signed long)-50);}
+        else if (incomingByte=='q') {handle_motion2(stepper1,(signed long)-5);}
+        else if (incomingByte=='w') {handle_motion2(stepper1,(signed long)5);}
+        else if (incomingByte=='W') {handle_motion2(stepper1,(signed long)50);}
+
+        else if (incomingByte=='E') {handle_motion2(stepper2,(signed long)-50);}
+        else if (incomingByte=='e') {handle_motion2(stepper2,(signed long)-5);}
+        else if (incomingByte=='r') {handle_motion2(stepper2,(signed long)5);}
+        else if (incomingByte=='R') {handle_motion2(stepper2,(signed long)50);}
+
+        else if (incomingByte=='p') {
           print_pos();
         }
       }
@@ -290,12 +328,29 @@ void auto_calibrate() {
   sweep_snap_time=sweep_start_time-SWEEP_SNAP_INTERVAL; // So it'll trigger immediately on entry
 }
 
+void zero_positions() {
+  stepper1->reset_state();
+  stepper2->reset_state();
+  stepper3->reset_state();
+  stepper4->reset_state();
+}
+
 void post_calibrate() {
+
+  in_sweep = 1;
+  
   // After the calibration, set the positions to the "known" state
   stepper1->reset_state();
-  stepper1->pos_current=STEPPER1_START*STEPPER1_STEPS_PER_UNIT;
+  stepper1->pos_current=STEPPER1_START*STEPPER1_STEPS_PER_UNIT-STEPS_TO_REVERSE_OFF_LIMIT;
+  // Getting off limit switch, so allow limit with this mode:
+  stepper1->relative_sweep(STEPS_TO_REVERSE_OFF_LIMIT,MODE_CALIBRATING_BACK);
+  
   stepper3->reset_state();
-  stepper3->pos_current=STEPPER3_START*STEPPER3_STEPS_PER_UNIT;
+  stepper3->pos_current=STEPPER3_START*STEPPER3_STEPS_PER_UNIT-STEPS_TO_REVERSE_OFF_LIMIT;
+  stepper1->relative_sweep(STEPS_TO_REVERSE_OFF_LIMIT,MODE_CALIBRATING_BACK);
+  
+  stepper1->start_move();
+  stepper3->start_move();
 }
 
 // Sweep modes: 1 (to start), 0 (to zero) 2 (to end)
