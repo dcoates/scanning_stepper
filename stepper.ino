@@ -200,7 +200,6 @@ void smooth_stop() {
 
 void process_serial_commands() {
   
-#if 0
       // Check for serial commands
       if (Serial.available() > 0) {
         // read the incoming byte:
@@ -213,14 +212,14 @@ void process_serial_commands() {
           sweep_to_end();
         } else if (incomingByte=='Z') {
           sweep_to_zero();
-        if (incomingByte=='s') {
+        } else if (incomingByte=='s') {
           sweep_horizontal(
        (signed long) (STEPPER4_START*STEPPER4_STEPS_PER_UNIT),
        SWEEP_TIME_SEC*1000000.0,1);
         } else if (incomingByte=='e') {
           sweep_horizontal(
        (signed long) (STEPPER4_END*STEPPER4_STEPS_PER_UNIT),
-       SWEEP_TIME_SEC*1000000.0,2); }
+       SWEEP_TIME_SEC*1000000.0,2);
         } else if (incomingByte=='z') {
           sweep_horizontal(
        (signed long) 0,
@@ -239,10 +238,11 @@ void process_serial_commands() {
           post_calibrate(); // Reset positions, move back off limit
         } else if (incomingByte=='0') {
           zero_positions();
-
-        }  else if (incomingByte=='1') {
-            handle_motion(stepper1);
         }
+        
+        //}  else if (incomingByte=='1') {
+        //    handle_motion(stepper1);
+        //}
 
         // Nudge commands: (follow top row of ASDF keyboard. -/+, then large/small is case
         else if (incomingByte=='Q') {handle_motion(stepper1,(signed long)-NUDGE_LARGE);}
@@ -268,7 +268,6 @@ void process_serial_commands() {
         else if (incomingByte=='x') {smooth_stop();}
 
     }
-#endif //0
 }
 
 void loop() {
