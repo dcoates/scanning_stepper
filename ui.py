@@ -102,32 +102,14 @@ def start(portname):
     #b.configure(text='Start!', command=start)
     #l['text'] = "Answer: " + str(answer) if answer else "No Answer"
 
-going=True
-def doit(arg):
-    global going
-    if going:
-        print(arg,end=' ',flush=True)
-        #ser.write(arg)
-        #root.after(100, partial(doit,arg))
 def fine_start(arg,evnt):
-    global going
-    print( arg, " !!!  " )
-    going=True
-    #root.after(100, partial(doit,arg))
+    ser.write(arg)
 def fine_stop(arg,evnt):
-    global going
-    ser.write('x')
-    #going=False
-    
+    ser.write(b'x')
 def coarse_start(arg,evnt):
-    global going
-    print( arg, " !!!  " )
-    going=True
-    #root.after(100, partial(doit,arg))
+    ser.write(arg)
 def coarse_stop(arg,evnt):
-    global going
-    ser.write('x')
-    #going=False
+    ser.write(b'x')
     
 root = Tk()
 root.title('Scanning WFS - Simple Controller UI')

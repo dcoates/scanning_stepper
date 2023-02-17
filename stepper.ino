@@ -39,7 +39,7 @@
 #define NUDGE_LARGE 1000
 #define NUDGE_SMALL 100
 
-#define REAL_SYSTEM 0 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
+#define REAL_SYSTEM 1 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
 
 // These are shared between legacy.ino and this file
 // So that we can peek at the buttons
@@ -208,7 +208,7 @@ void process_serial_commands() {
         // Sweeps: (vertical, then horizontal)
         if (incomingByte=='S') {
           sweep_to_start();
-        } else if (incomingByte=='E') {
+        } else if (incomingByte=='F') {
           sweep_to_end();
         } else if (incomingByte=='Z') {
           sweep_to_zero();
@@ -216,7 +216,7 @@ void process_serial_commands() {
           sweep_horizontal(
        (signed long) (STEPPER4_START*STEPPER4_STEPS_PER_UNIT),
        SWEEP_TIME_SEC*1000000.0,1);
-        } else if (incomingByte=='e') {
+        } else if (incomingByte=='f') {
           sweep_horizontal(
        (signed long) (STEPPER4_END*STEPPER4_STEPS_PER_UNIT),
        SWEEP_TIME_SEC*1000000.0,2);
