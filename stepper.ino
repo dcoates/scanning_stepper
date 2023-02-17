@@ -211,7 +211,7 @@ void process_serial_commands() {
         // Sweeps: (vertical, then horizontal)
         if (incomingByte=='S') {
           sweep_to_start();
-        } else if (incomingByte=='E') {
+        } else if (incomingByte=='F') {
           sweep_to_end();
         } else if (incomingByte=='Z') {
           sweep_to_zero();
@@ -219,7 +219,7 @@ void process_serial_commands() {
           sweep_horizontal(
        (signed long) (STEPPER4_START*STEPPER4_STEPS_PER_UNIT),
        SWEEP_TIME_SEC*1000000.0,1);
-        } else if (incomingByte=='e') {
+        } else if (incomingByte=='f') {
           sweep_horizontal(
        (signed long) (STEPPER4_END*STEPPER4_STEPS_PER_UNIT),
        SWEEP_TIME_SEC*1000000.0,2);
