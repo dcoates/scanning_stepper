@@ -22,13 +22,13 @@
 #define STEPPER1_START (-35+13) 
 #define STEPPER2_START -800
 #define STEPPER3_START -1000
-#define STEPPER4_START (5 * 1600.0/4.0 )
+#define STEPPER4_START (-5 * 1600.0/4.0 )
 
 // Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (35 + 13)
 #define STEPPER2_END 0
 #define STEPPER3_END 1000
-#define STEPPER4_END 20
+#define STEPPER4_END (5 * 1600.0/4.0 )
 
 // -30 to +30 : 30.36mm
 
@@ -39,7 +39,10 @@
 #define NUDGE_LARGE 1000
 #define NUDGE_SMALL 100
 
-#define REAL_SYSTEM 0 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
+#define NUDGE_SMALL4 1
+#define NUDGE_LARGE4 100
+
+#define REAL_SYSTEM 1 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
 
 // These are shared between legacy.ino and this file
 // So that we can peek at the buttons
@@ -260,10 +263,10 @@ void process_serial_commands() {
         else if (incomingByte=='y') {handle_motion(stepper3,(signed long)NUDGE_SMALL);}
         else if (incomingByte=='Y') {handle_motion(stepper3,(signed long)NUDGE_LARGE);}
 
-        else if (incomingByte=='U') {handle_motion(stepper4,(signed long)-NUDGE_LARGE);}
-        else if (incomingByte=='u') {handle_motion(stepper4,(signed long)-NUDGE_SMALL);}
-        else if (incomingByte=='i') {handle_motion(stepper4,(signed long)NUDGE_SMALL);}
-        else if (incomingByte=='I') {handle_motion(stepper4,(signed long)NUDGE_LARGE);}
+        else if (incomingByte=='U') {handle_motion(stepper4,(signed long)-NUDGE_LARGE4);}
+        else if (incomingByte=='u') {handle_motion(stepper4,(signed long)-NUDGE_SMALL4);}
+        else if (incomingByte=='i') {handle_motion(stepper4,(signed long)NUDGE_SMALL4);}
+        else if (incomingByte=='I') {handle_motion(stepper4,(signed long)NUDGE_LARGE4);}
 
         else if (incomingByte=='x') {smooth_stop();}
 
@@ -281,7 +284,7 @@ void loop() {
       process_serial_commands();
 
 #if REAL_SYSTEM
-      legacy_loop(); // main loop from old front panel for manual ops
+    legacy_loop(); // main loop from old front panel for manual ops
 
     // Are any buttons held to initiate sweep?
     unsigned long now = millis();
