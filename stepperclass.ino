@@ -180,7 +180,7 @@ void StepperState::do_update() {
   unsigned long elapsed = (now-pulse_on_time);
 
 #if REAL_SYSTEM
-  if (num_motor==1) { // TODO: use lims_present or derived class) {
+  if ((num_motor==1) ) { // TODO: use lims_present or derived class) {
     unsigned char lims_current = digitalRead(limit1); // TODO: Specify port
     if ((lims_current != lims_state) || ( (now-last_limit_read) > LIMS_DEBOUNCE_PERIOD_US/10.0)) {
       lims_last_stable_time = now;
