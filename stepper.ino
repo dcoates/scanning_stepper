@@ -87,10 +87,10 @@ void setup() {
     
     legacy_setup(); // Call legacy setup code. Sets pin directions, mainly.
 
-    stepper1 = new StepperLUT8(1, DRIVER1_PULSE, DRIVER1_DIR);
-    stepper2 = new StepperLUT16(2, DRIVER2_PULSE, DRIVER2_DIR); 
-    stepper3 = new StepperConstant(3, DRIVER3_PULSE,DRIVER3_DIR); 
-    stepper4 = new StepperConstant(4, DRIVER4_PULSE,DRIVER4_DIR); 
+    stepper1 = new StepperLUT8(1, DRIVER1_PULSE, DRIVER1_DIR, limit1, STEPPER1_START);
+    stepper2 = new StepperLUT16(2, DRIVER2_PULSE, DRIVER2_DIR, limit2, STEPPER2_START); 
+    stepper3 = new StepperConstant(3, DRIVER3_PULSE,DRIVER3_DIR, limit3, STEPPER3_START); 
+    stepper4 = new StepperConstant(4, DRIVER4_PULSE,DRIVER4_DIR, limit1, STEPPER4_START); 
 
     in_sweep=0;
 }
@@ -189,6 +189,41 @@ void handle_motion(StepperState* which_motor, signed long amount) {
 
 };
 
+// This calibration function blocks everything else. The state machine will not run
+// while doing the calibrations.
+// Amount indicates direction too.
+int calibrate_new(StepperState* which_motor, signed long amount) {
+  handle_motion(which_motor, amount); // start the motor, uses "Tone"
+
+  // Repeat until failsafe button or limit hit
+  while ( (digitalRead(m3go)==LOW)  && (!which_motor->limit_hit) )
+  {
+      which_motor->read_limit(); // debounce and read.
+  }
+  smooth_stop();
+
+  if (!which_motor->limit_hit) { // If user hit panic button
+    Serial.println('Failsafe during calibrate');
+    return 0;
+  }
+
+  // Correctly hit the limit switch. Reverse and go back a little until off the limit switch
+  handle_motion(which_motor, -1);  // Go opposite direction the minimum amount
+
+  while ( (digitalRead(m3go)==LOW)  && (which_motor->limit_hit) )
+  {
+      which_motor->read_limit(); // debounce and read.
+  }
+  smooth_stop();
+
+  // Tell it to reset itself, but at a known position.
+  which_motor->reset_state();
+  which_motor->pos_current = which_motor->pos_start;
+
+  // Now this motor is just off the limit switch
+  return 1;
+}
+
 void smooth_stop() {
   stepper1->smooth_stop();
   stepper2->smooth_stop();
@@ -265,6 +300,11 @@ void process_serial_commands() {
         else if (incomingByte=='i') {handle_motion(stepper4,(signed long)NUDGE_SMALL);}
         else if (incomingByte=='I') {handle_motion(stepper4,(signed long)NUDGE_LARGE);}
 
+        else if (incomingByte=='1') {calibrate_new(stepper1,(signed long)-NUDGE_LARGE);}
+        else if (incomingByte=='2') {calibrate_new(stepper2,(signed long)-NUDGE_LARGE);}
+        else if (incomingByte=='3') {calibrate_new(stepper3,(signed long)-NUDGE_LARGE);}
+        else if (incomingByte=='4') {calibrate_new(stepper4,(signed long)-NUDGE_LARGE);}
+
         else if (incomingByte=='x') {smooth_stop();}
 
     }
@@ -338,7 +378,7 @@ void loop() {
          sweep_snap_time = now-error; // try to get the next one to happen a little earlier
 
         // Only exit the sweep after the last picture taken
-        in_sweep = (stepper1->sweeping || stepper2->sweeping || stepper3->sweeping);
+        in_sweep = (stepper1->sweeping || stepper2->sweeping || stepper3->sweeping || stepper4->sweeping);
       } else {
         digitalWrite(limit3,LOW);
       }
@@ -391,6 +431,13 @@ void sweep_horizontal(signed long pos, unsigned long duration, int mode) {
 }
 
 void auto_calibrate() {
+
+  if calibrate_new(stepper1,(signed long)-NUDGE_LARGE)
+      if calibrate_new(stepper2,(signed long)-NUDGE_LARGE)
+          if calibrate_new(stepper3,(signed long)-NUDGE_LARGE)
+                            calibrate_new(stepper4,(signed long)-NUDGE_LARGE);
+  return;
+
   // TODO: This could be any number (infinite), since goes until limit switch. But for now
   // Just use same magnitude as sweep.
   stepper1->prepare_move( (signed long) (STEPPER1_START*STEPPER1_STEPS_PER_UNIT),0L,MODE_CALIBRATING);

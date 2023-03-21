@@ -14,28 +14,32 @@ void* luts[]={table1,table2,table2r};
 
 
 // StepperState implementation. Constructors just inits.
-StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir) {
-	pulse_on_time=LONG_MAX;
+StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir, int pin_limit, signed long pos_start) {
 
   mypin_pulse = pin_pulse;
   mypin_dir = pin_dir;
+  this->pin_limit = pin_limit;
   
   pinMode(mypin_pulse,OUTPUT);
   pinMode(mypin_dir,OUTPUT);
 
   this->num_motor = num_motor;
 
+  this->pos_start = pos_start;
+
   reset_state();
 }
 
 void StepperState::reset_state()
 {
+	pulse_on_time=LONG_MAX;
 	pos_current=0;
 	mypos_end=0;
 
   sweeping=0;
   steps_completed=0;
 
+  limit_hit=0;
   lims_present=1; 
   lims_state=1; // when not pushed it is 1. Probably the default (unless it is already at rail)
   lims_last_stable_time=-1; // For debounce
@@ -170,6 +174,40 @@ void StepperState::debug_output(unsigned long msg) {
   void StepperState::debug_output(unsigned long msg) {}
 #endif
 
+void StepperState::read_limit() {
+
+  unsigned long now = micros();
+  unsigned char lims_current = digitalRead(limit_port); // TODO: Specify port
+
+  // "last_limit_read" is probably unnecessary when called in a blocking fashion like now.
+  // Was necessary previously for state machine, since don't know when the switch is
+  // tested.
+  if ((lims_current != lims_state) { // || ( (now-last_limit_read) > LIMS_DEBOUNCE_PERIOD_US)) {
+    // Not yet stable or read recently enough
+    lims_last_stable_time = now;
+    last_limit_read = now;
+    lims_state = lims_current;
+
+    Serial.println("Flip");
+
+    // TODO: The limit switch on motor #1 seems noisy (no wrapped ground), and when open isn't reliably HIGH
+    if ( (!lims_state) && (lims_current==HIGH) ) { // so for now, as soon as we see any HIGH signal when limited, assume off switch
+      lims_state=1;
+      limit_hit=0;
+      Serial.println("ForceOff");
+    }
+
+  } else {
+      Serial.println("Stab");
+    // Stable. If duration long enough, change the state of limit_hit.
+    if (((now - lims_last_stable_time) > LIMS_DEBOUNCE_PERIOD_US) )
+      limit_hit=(lims_current==0);
+      lims_state=lims_current;
+      Serial.println("On switch");
+  }
+
+}
+
 void StepperState::do_update() {
   
   if (!sweeping) // TODO: Put this before limit switch checking for efficiency (on non-limited motors)
@@ -179,6 +217,7 @@ void StepperState::do_update() {
   unsigned long now = micros();
   unsigned long elapsed = (now-pulse_on_time);
 
+#if 0
 #if REAL_SYSTEM
   if (num_motor==1) { // TODO: use lims_present or derived class) {
     unsigned char lims_current = digitalRead(limit1); // TODO: Specify port
@@ -204,6 +243,7 @@ void StepperState::do_update() {
       }
     }
   }
+#endif //0 : Old way to do limit switches in loop
   
   if (elapsed>=2048) { // Error checking: too long elapsed means something may have been missed
     bad_now = now;

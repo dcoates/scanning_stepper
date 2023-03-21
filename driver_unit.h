@@ -29,6 +29,7 @@
 #define m2dir 9         //switch INPUT for motor2 direction
 #define m3go 12         //button INPUT to turn on motor3
 #define m3dir 13        //switch INPUT for motor3 direction 
+
 #define limit1 17       //d17 is limit switch1 INPUT
 #define limit2 18       //d18 is limit switch1 INPUT
 #define limit3 19       //d19 is limit switch1 INPUT

@@ -12,7 +12,7 @@
 class StepperState
 {
 public:
-  StepperState(int num_motor, int pin_go, int pin_dir);
+  StepperState(int num_motor, int pin_go, int pin_dir, int pin_limit, signed long start_pos);
   inline void do_update();  // state machine to run every loop
   void reset_state();
 
@@ -37,8 +37,10 @@ public:
 
   int mode;
   signed int pos_current;
+  signed int pos_start; // Pos at the sweep start (or, just off the limit switch)
 
   //Limit switches:
+  unsigned char limit_hit=0; 
   unsigned char lims_present=0; // yes or no?
   unsigned char lims_state=1;
   unsigned long lims_last_stable_time=-1; // For debounce
@@ -66,6 +68,7 @@ private:
   // Hardware correspondenc:
   int mypin_pulse;
   int mypin_dir;
+  int pin_limit;
 
   signed long mypos_end;
   signed int mydir; // -1 or +1

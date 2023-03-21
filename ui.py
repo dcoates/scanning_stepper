@@ -102,26 +102,21 @@ def start(portname):
     #b.configure(text='Start!', command=start)
     #l['text'] = "Answer: " + str(answer) if answer else "No Answer"
 
-def fine_start(arg,evnt):
+def ser_command(arg,evnt):
+    #print(arg)
     ser.write(arg)
-def fine_stop(arg,evnt):
-    ser.write(b'x')
-def coarse_start(arg,evnt):
-    ser.write(arg)
-def coarse_stop(arg,evnt):
-    ser.write(b'x')
     
 root = Tk()
 root.title('Scanning WFS - Simple Controller UI')
-root.geometry('650x512')
+root.geometry('768x512')
 f = ttk.Frame(root, width=512); f.grid()
 
 str_port=StringVar();
-list_ports = ttk.Combobox(f,textvariable=str_port); add_coms( list_ports); list_ports.grid(row=1, column=5,padx=5,pady=5)
+list_ports = ttk.Combobox(f,textvariable=str_port); add_coms( list_ports); list_ports.grid(row=1, column=6,padx=5,pady=5)
 #l_port = ttk.Label(f, text="Port"); l_port.grid(row=1, column=5, padx=5, pady=5)
 list_ports.bind("<<ComboboxSelected>>", lambda x: b_connect.configure(state="enable"))
-l_status = ttk.Label(f, text="NOT Connected", foreground='red'); l_status.grid(row=0, column=5, padx=5, pady=5)
-b_connect = ttk.Button(f, text="Connect!", command=partial(start,str_port),state='disable'); b_connect.grid(row=2,column=5, padx=5, pady=5)
+l_status = ttk.Label(f, text="NOT Connected", foreground='red'); l_status.grid(row=0, column=6, padx=5, pady=5)
+b_connect = ttk.Button(f, text="Connect!", command=partial(start,str_port),state='disable'); b_connect.grid(row=2,column=6, padx=5, pady=5)
 
 b_pos = ttk.Button(f, text="Get pos", command=getpos); b_pos.grid(row=1, column=2, padx=5, pady=5)
 l_p1 = ttk.Label(f, text="Pos1:"); l_p1.grid(row=2, column=2, padx=5, pady=5)
@@ -134,29 +129,34 @@ b_coarsesR=[ttk.Button(f, text='%d++'%(n+1)) for n in range(4)]
 b_finesL=[ttk.Button(f, text='-%d'%(n+1)) for n in range(4)]
 b_coarsesL=[ttk.Button(f, text='--%d'%(n+1)) for n in range(4)]
 
+b_cals=[ttk.Button(f, text='CAL%d'%(n+1)) for n in range(4)]
+
 # Each one goes: --,-,+,++ . They are in the top letter row of an asdf keyboard. Caps for big.
-codes=[[b'Q',b'q',b'w',b'W'], [b'E',b'e',b'r',b'R'],[b'T',b't',b'y',b'Y'], [b'U',b'u',b'i',b'I'] ]
+codes=[[b'Q',b'q',b'w',b'W'], [b'E',b'e',b'r',b'R'],[b'T',b't',b'y',b'Y'], [b'U',b'u',b'i',b'I'], [b'1',b'2',b'3',b'4'] ]
 
 for nbutton,b1 in enumerate(b_coarsesL):
     b1.grid(row=nbutton+2,column=0,padx=5,pady=5)
-    b1.bind('<ButtonPress-1>',partial(coarse_start,codes[nbutton][0]))
-    b1.bind('<ButtonRelease-1>',partial(coarse_stop,codes[nbutton][0]))
+    b1.bind('<ButtonPress-1>',partial(ser_command,codes[nbutton][0]))
+    b1.bind('<ButtonRelease-1>',partial(ser_command,b'x'))
  
 for nbutton,b1 in enumerate(b_finesL):
     b1.grid(row=nbutton+2,column=1,padx=5,pady=5)
-    b1.bind('<ButtonPress-1>',partial(fine_start,codes[nbutton][1]))
-    b1.bind('<ButtonRelease-1>',partial(fine_stop,codes[nbutton][1]))
+    b1.bind('<ButtonPress-1>',partial(ser_command,codes[nbutton][1]))
+    b1.bind('<ButtonRelease-1>',partial(ser_command,'x'))
     
 for nbutton,b1 in enumerate(b_finesR):
     b1.grid(row=nbutton+2,column=3,padx=5,pady=5)
-    b1.bind('<ButtonPress-1>',partial(fine_start,codes[nbutton][2] )  )
-    b1.bind('<ButtonRelease-1>',partial(fine_stop,codes[nbutton][2] ) )
+    b1.bind('<ButtonPress-1>',partial(ser_command,codes[nbutton][2] )  )
+    b1.bind('<ButtonRelease-1>',partial(ser_command,'x') )
 
 for nbutton,b1 in enumerate(b_coarsesR):
     b1.grid(row=nbutton+2,column=4,padx=5,pady=5)
-    b1.bind('<ButtonPress-1>',partial(coarse_start,codes[nbutton][3]))
-    b1.bind('<ButtonRelease-1>',partial(coarse_stop,codes[nbutton][3]))
+    b1.bind('<ButtonPress-1>',partial(ser_command,codes[nbutton][3]))
+    b1.bind('<ButtonRelease-1>',partial(ser_command,'x'))
 
+for nbutton,b1 in enumerate(b_cals):
+    b1.grid(row=nbutton+2,column=5,padx=5,pady=5)
+    b1.bind('<ButtonPress-1>',partial(ser_command,codes[4][nbutton]))
  
  # 2 letter commands:
  #   b1.bind('<ButtonRelease-1>',partial(coarse_stop,'%dM'%(nbutton+1)))
@@ -164,6 +164,8 @@ for nbutton,b1 in enumerate(b_coarsesR):
 b_cal1 = ttk.Button(f, text="Cal1", command=cal1); b_cal1.grid(row=0, column=0, padx=5, pady=5)
 b_cal2 = ttk.Button(f, text="Cal unlimit", command=cal2,state='enable'); b_cal2.grid(row=0, column=1, padx=5, pady=5)
 b_cal0 = ttk.Button(f, text="Zero Pos.", command=zero_pos,state='enable'); b_cal0.grid(row=0, column=3, padx=5, pady=5)
+
+b_calX = ttk.Button(f, text="Cal ALL", command=cal1); b_calX.grid(row=1, column=5, padx=5, pady=5)
 
 # Row/column sizes: w is parent widget
 #w.columnconfigure(N, option=value, ...)
@@ -191,6 +193,9 @@ b_Hdo2 = ttk.Button(f, text="Sweep End",   command=movH2); b_Hdo2.grid(row=10, c
 #b_test.bind('<ButtonRelease-1>',partial(fstop,1))
 #p = ttk.Progressbar(f, orient="horizontal", mode="determinate", maximum=20); 
 #p.grid(column=2, row=2, padx=5, pady=5)
+
+ser=None
 root.mainloop()
 
-ser.close()
+if not(ser==None):
+    ser.close()
