@@ -12,7 +12,7 @@
 #define STEPPER3_STEPS_PER_UNIT 1
 // Old stepper3 DIP(8000.0/4.0)
 //#define STEPPER4_STEPS_PER_UNIT (1600.0/4.0) /* Degrees. Empirical: not sure why "/4" */
-#define STEPPER4_STEPS_PER_UNIT 1
+#define STEPPER4_STEPS_PER_UNIT (400/8.0)
 
 // Zero/middle point for Stepper1 is at 1300 steps away from "0" (due to non-linear scissors)
 // Zero/middle point for Stepper2?
@@ -22,13 +22,13 @@
 #define STEPPER1_START (-35+13) 
 #define STEPPER2_START -800
 #define STEPPER3_START -1000
-#define STEPPER4_START (5 * 1600.0/4.0 )
+#define STEPPER4_START -35
 
 // Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (35 + 13)
 #define STEPPER2_END 0
 #define STEPPER3_END 1000
-#define STEPPER4_END 20
+#define STEPPER4_END 35
 
 // -30 to +30 : 30.36mm
 
@@ -36,8 +36,11 @@
 #define BUTTON_HOLD_MS 1500
 #define LIMS_DEBOUNCE_PERIOD_US 2000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
 
-#define NUDGE_LARGE 1000
-#define NUDGE_SMALL 100
+#define NUDGE_LARGE 100
+#define NUDGE_SMALL 10
+
+#define NUDGE_SMALL4 1
+#define NUDGE_LARGE4 10
 
 #define REAL_SYSTEM 1 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
 
@@ -247,7 +250,9 @@ void process_serial_commands() {
           sweep_to_end();
         } else if (incomingByte=='Z') {
           sweep_to_zero();
-        } else if (incomingByte=='s') {
+        }
+        
+        else if (incomingByte=='s') {
           sweep_horizontal(
        (signed long) (STEPPER4_START*STEPPER4_STEPS_PER_UNIT),
        SWEEP_TIME_SEC*1000000.0,1);
@@ -295,10 +300,10 @@ void process_serial_commands() {
         else if (incomingByte=='y') {handle_motion(stepper3,(signed long)NUDGE_SMALL);}
         else if (incomingByte=='Y') {handle_motion(stepper3,(signed long)NUDGE_LARGE);}
 
-        else if (incomingByte=='U') {handle_motion(stepper4,(signed long)-NUDGE_LARGE);}
-        else if (incomingByte=='u') {handle_motion(stepper4,(signed long)-NUDGE_SMALL);}
-        else if (incomingByte=='i') {handle_motion(stepper4,(signed long)NUDGE_SMALL);}
-        else if (incomingByte=='I') {handle_motion(stepper4,(signed long)NUDGE_LARGE);}
+        else if (incomingByte=='U') {handle_motion(stepper4,(signed long)-NUDGE_LARGE4);}
+        else if (incomingByte=='u') {handle_motion(stepper4,(signed long)-NUDGE_SMALL4);}
+        else if (incomingByte=='i') {handle_motion(stepper4,(signed long)NUDGE_SMALL4);}
+        else if (incomingByte=='I') {handle_motion(stepper4,(signed long)NUDGE_LARGE4);}
 
         else if (incomingByte=='1') {calibrate_new(stepper1,(signed long)-NUDGE_LARGE);}
         else if (incomingByte=='2') {calibrate_new(stepper2,(signed long)-NUDGE_LARGE);}
@@ -317,11 +322,10 @@ void loop() {
       // No sweep happening: do legacy (manual) ops, serial debugging, check for hold
 
       interrupts();
- 
       process_serial_commands();
 
 #if REAL_SYSTEM
-      legacy_loop(); // main loop from old front panel for manual ops
+    legacy_loop(); // main loop from old front panel for manual ops
 
     // Are any buttons held to initiate sweep?
     unsigned long now = millis();
@@ -418,7 +422,7 @@ void sweep_to(signed long pos1, signed long pos2, signed long pos3, unsigned lon
 }
 
 void sweep_horizontal(signed long pos, unsigned long duration, int mode) {
-  Serial.print("Sweep H");
+  Serial.println("Sweep H");
 
   stepper4->prepare_move( pos, duration, mode);
   stepper4->start_move();
@@ -440,8 +444,8 @@ void auto_calibrate() {
 
   // TODO: This could be any number (infinite), since goes until limit switch. But for now
   // Just use same magnitude as sweep.
-  stepper1->prepare_move( (signed long) (STEPPER1_START*STEPPER1_STEPS_PER_UNIT),0L,MODE_CALIBRATING);
-  stepper3->prepare_move( (signed long) (STEPPER3_START*STEPPER3_STEPS_PER_UNIT),0L,MODE_CALIBRATING);
+  stepper1->prepare_move( (signed long) (10*STEPPER1_START*STEPPER1_STEPS_PER_UNIT),0L,MODE_CALIBRATING); // Go a far until limit
+  stepper3->prepare_move( (signed long) (10*STEPPER3_START*STEPPER3_STEPS_PER_UNIT),0L,MODE_CALIBRATING);
   stepper1->start_move();
   stepper3->start_move();
   sweep_start_time=millis();
