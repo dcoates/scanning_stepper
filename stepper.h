@@ -24,6 +24,8 @@ public:
   void stop_move(unsigned int lower_pulse);  // Stop and cancel future movements.
   virtual unsigned int get_next_interval()=0;
 
+  void read_limit();
+  
   // These use tone, like the legacy code:
   void smooth_start(int dir, int speed);
   void smooth_stop();
@@ -55,8 +57,9 @@ public:
 
   void set_table_info(byte ntable);
 
-private:
   int num_motor;
+
+private:
 
   // All durations in usec
   unsigned int interval_next;
@@ -77,13 +80,13 @@ private:
 class StepperLUT8 : public StepperState // 8 bit
 {
 public:
-  StepperLUT8(int num_motor, int pin_go, int pin_dir);
+  StepperLUT8(int num_motor, int pin_go, int pin_dir, int pin_limit, signed long pos_start);
   unsigned int get_next_interval();
 };
 class StepperLUT16 : public StepperState // 16 bit
 {
 public:
-  StepperLUT16(int num_motor, int pin_go, int pin_dir);
+  StepperLUT16(int num_motor, int pin_go, int pin_dir, int pin_limit, signed long pos_start);
   unsigned int get_next_interval();
 };
 
@@ -93,6 +96,6 @@ public:
 class StepperConstant : public StepperState
 {
 public:
-  StepperConstant(int num_motor, int pin_go, int pin_dir);
+  StepperConstant(int num_motor, int pin_go, int pin_dir, int pin_limit, signed long pos_start);
   unsigned int get_next_interval();
 };

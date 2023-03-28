@@ -142,17 +142,17 @@ for nbutton,b1 in enumerate(b_coarsesL):
 for nbutton,b1 in enumerate(b_finesL):
     b1.grid(row=nbutton+2,column=1,padx=5,pady=5)
     b1.bind('<ButtonPress-1>',partial(ser_command,codes[nbutton][1]))
-    b1.bind('<ButtonRelease-1>',partial(ser_command,'x'))
+    b1.bind('<ButtonRelease-1>',partial(ser_command,b'x'))
     
 for nbutton,b1 in enumerate(b_finesR):
     b1.grid(row=nbutton+2,column=3,padx=5,pady=5)
     b1.bind('<ButtonPress-1>',partial(ser_command,codes[nbutton][2] )  )
-    b1.bind('<ButtonRelease-1>',partial(ser_command,'x') )
+    b1.bind('<ButtonRelease-1>',partial(ser_command,b'x') )
 
 for nbutton,b1 in enumerate(b_coarsesR):
     b1.grid(row=nbutton+2,column=4,padx=5,pady=5)
     b1.bind('<ButtonPress-1>',partial(ser_command,codes[nbutton][3]))
-    b1.bind('<ButtonRelease-1>',partial(ser_command,'x'))
+    b1.bind('<ButtonRelease-1>',partial(ser_command,b'x'))
 
 for nbutton,b1 in enumerate(b_cals):
     b1.grid(row=nbutton+2,column=5,padx=5,pady=5)

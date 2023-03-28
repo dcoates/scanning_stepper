@@ -177,18 +177,18 @@ void StepperState::debug_output(unsigned long msg) {
 void StepperState::read_limit() {
 
   unsigned long now = micros();
-  unsigned char lims_current = digitalRead(limit_port); // TODO: Specify port
+  unsigned char lims_current = digitalRead(pin_limit); // TODO: Specify port
 
   // "last_limit_read" is probably unnecessary when called in a blocking fashion like now.
   // Was necessary previously for state machine, since don't know when the switch is
   // tested.
-  if ((lims_current != lims_state) { // || ( (now-last_limit_read) > LIMS_DEBOUNCE_PERIOD_US)) {
+  if (lims_current != lims_state) { // || ( (now-last_limit_read) > LIMS_DEBOUNCE_PERIOD_US)) {
     // Not yet stable or read recently enough
     lims_last_stable_time = now;
     last_limit_read = now;
     lims_state = lims_current;
 
-    Serial.println("Flip");
+    //Serial.println("Flip");
 
     // TODO: The limit switch on motor #1 seems noisy (no wrapped ground), and when open isn't reliably HIGH
     if ( (!lims_state) && (lims_current==HIGH) ) { // so for now, as soon as we see any HIGH signal when limited, assume off switch
@@ -198,12 +198,13 @@ void StepperState::read_limit() {
     }
 
   } else {
-      Serial.println("Stab");
+      //Serial.println("Stab");
     // Stable. If duration long enough, change the state of limit_hit.
     if (((now - lims_last_stable_time) > LIMS_DEBOUNCE_PERIOD_US) )
       limit_hit=(lims_current==0);
       lims_state=lims_current;
-      Serial.println("On switch");
+      Serial.print("On switch");
+      Serial.print(limit_hit);
   }
 
 }
@@ -318,7 +319,7 @@ void StepperState::do_update() {
 	}
 };
 
-StepperLUT8::StepperLUT8(int num_motor, int pin_pulse, int pin_dir) : StepperState( num_motor, pin_pulse, pin_dir )
+StepperLUT8::StepperLUT8(int num_motor, int pin_pulse, int pin_dir, int pin_limit, signed long pos_start) : StepperState( num_motor, pin_pulse, pin_dir, pin_limit, pos_start )
 {}
 
 unsigned int StepperLUT8::get_next_interval() {
@@ -331,7 +332,7 @@ unsigned int StepperLUT8::get_next_interval() {
 	return table_interval;
 }
 
-StepperLUT16::StepperLUT16(int num_motor, int pin_pulse, int pin_dir) : StepperState( num_motor, pin_pulse, pin_dir )
+StepperLUT16::StepperLUT16(int num_motor, int pin_pulse, int pin_dir, int pin_limit, signed long pos_start) : StepperState( num_motor, pin_pulse, pin_dir, pin_limit, pos_start )
 {}
 
 unsigned int StepperLUT16::get_next_interval() {
@@ -344,7 +345,7 @@ unsigned int StepperLUT16::get_next_interval() {
   return table_interval;
 }
 
-StepperConstant::StepperConstant(int num_motor, int pin_pulse, int pin_dir) : StepperState( num_motor, pin_pulse, pin_dir )
+StepperConstant::StepperConstant(int num_motor, int pin_pulse, int pin_dir, int pin_limit, signed long pos_start) : StepperState( num_motor, pin_pulse, pin_dir, pin_limit, pos_start )
 {}
 
 unsigned int StepperConstant::get_next_interval() {

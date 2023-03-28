@@ -21,23 +21,23 @@
 // Where to begin the sweep. Button press left moves from "0" here
 #define STEPPER1_START (-35+13) 
 #define STEPPER2_START -800
-#define STEPPER3_START -1000
+#define STEPPER3_START -200
 #define STEPPER4_START -35
 
 // Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (35 + 13)
 #define STEPPER2_END 0
-#define STEPPER3_END 1000
+#define STEPPER3_END 200
 #define STEPPER4_END 35
 
 // -30 to +30 : 30.36mm
 
 #define SWEEP_TIME_SEC 3.0
 #define BUTTON_HOLD_MS 1500
-#define LIMS_DEBOUNCE_PERIOD_US 2000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
+#define LIMS_DEBOUNCE_PERIOD_US 30000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
 
-#define NUDGE_LARGE 100
 #define NUDGE_SMALL 10
+#define NUDGE_LARGE 100
 
 #define NUDGE_SMALL4 1
 #define NUDGE_LARGE4 10
@@ -77,7 +77,7 @@ unsigned long bad_potime;
 
 // Every 100 ms: 10 * 3
 #define POS_BUF_SIZE 32 * 5
-#define SWEEP_SNAP_INTERVAL (3000000/7)
+#define SWEEP_SNAP_INTERVAL (3000000/7) // camera
 unsigned int pos_curr=0;
 signed long pos_buffer[POS_BUF_SIZE]; // Store tiime + pos for each motor
 unsigned long sweep_snap_time=0;
@@ -90,10 +90,10 @@ void setup() {
     
     legacy_setup(); // Call legacy setup code. Sets pin directions, mainly.
 
-    stepper1 = new StepperLUT8(1, DRIVER1_PULSE, DRIVER1_DIR, limit1, STEPPER1_START);
-    stepper2 = new StepperLUT16(2, DRIVER2_PULSE, DRIVER2_DIR, limit2, STEPPER2_START); 
-    stepper3 = new StepperConstant(3, DRIVER3_PULSE,DRIVER3_DIR, limit3, STEPPER3_START); 
-    stepper4 = new StepperConstant(4, DRIVER4_PULSE,DRIVER4_DIR, limit1, STEPPER4_START); 
+    stepper1 = new StepperLUT8(1, DRIVER1_PULSE, DRIVER1_DIR, limit1, (signed long)(STEPPER1_START*STEPPER1_STEPS_PER_UNIT));
+    stepper2 = new StepperLUT16(2, DRIVER2_PULSE, DRIVER2_DIR, limit2, (signed long)(STEPPER2_START*STEPPER2_STEPS_PER_UNIT)); 
+    stepper3 = new StepperConstant(3, DRIVER3_PULSE,DRIVER3_DIR, limit2, (signed long)(STEPPER3_START*STEPPER3_STEPS_PER_UNIT)); 
+    stepper4 = new StepperConstant(4, DRIVER4_PULSE,DRIVER4_DIR, limit2, (signed long)(STEPPER4_START*STEPPER4_STEPS_PER_UNIT)); 
 
     in_sweep=0;
 }
@@ -210,15 +210,22 @@ int calibrate_new(StepperState* which_motor, signed long amount) {
     return 0;
   }
 
-  // Correctly hit the limit switch. Reverse and go back a little until off the limit switch
-  handle_motion(which_motor, -1);  // Go opposite direction the minimum amount
+  if (which_motor->num_motor==1)
+    // Correctly hit the limit switch. Reverse and go back a little until off the limit switch
+    handle_motion(which_motor, 500);  // Go opposite direction the minimum amount
+  else if (which_motor->num_motor==3)
+    handle_motion(which_motor, 100);  // Go opposite direction the minimum amount
 
+#if 0
   while ( (digitalRead(m3go)==LOW)  && (which_motor->limit_hit) )
   {
       which_motor->read_limit(); // debounce and read.
   }
-  smooth_stop();
+#endif
 
+  delay(1250); // 1250 for Motor  1 (lifter)
+  smooth_stop();
+  
   // Tell it to reset itself, but at a known position.
   which_motor->reset_state();
   which_motor->pos_current = which_motor->pos_start;
@@ -305,9 +312,9 @@ void process_serial_commands() {
         else if (incomingByte=='i') {handle_motion(stepper4,(signed long)NUDGE_SMALL4);}
         else if (incomingByte=='I') {handle_motion(stepper4,(signed long)NUDGE_LARGE4);}
 
-        else if (incomingByte=='1') {calibrate_new(stepper1,(signed long)-NUDGE_LARGE);}
+        else if (incomingByte=='1') {calibrate_new(stepper1,(signed long)-NUDGE_SMALL);}
         else if (incomingByte=='2') {calibrate_new(stepper2,(signed long)-NUDGE_LARGE);}
-        else if (incomingByte=='3') {calibrate_new(stepper3,(signed long)-NUDGE_LARGE);}
+        else if (incomingByte=='3') {calibrate_new(stepper3,(signed long)-NUDGE_LARGE*2);}
         else if (incomingByte=='4') {calibrate_new(stepper4,(signed long)-NUDGE_LARGE);}
 
         else if (incomingByte=='x') {smooth_stop();}
@@ -325,7 +332,7 @@ void loop() {
       process_serial_commands();
 
 #if REAL_SYSTEM
-    legacy_loop(); // main loop from old front panel for manual ops
+    //legacy_loop(); // main loop from old front panel for manual ops
 
     // Are any buttons held to initiate sweep?
     unsigned long now = millis();
@@ -408,10 +415,10 @@ void sweep_to(signed long pos1, signed long pos2, signed long pos3, unsigned lon
   Serial.println(duration);
 
   stepper1->prepare_move(  pos1,duration,mode);
-  stepper2->prepare_move(  pos2,duration,mode);
+//  stepper2->prepare_move(  pos2,duration,mode);
   stepper3->prepare_move(  pos3,duration,mode);
   stepper1->start_move();
-  stepper2->start_move();
+//  stepper2->start_move();
   stepper3->start_move();
   sweep_start_time=millis();
   
@@ -436,10 +443,10 @@ void sweep_horizontal(signed long pos, unsigned long duration, int mode) {
 
 void auto_calibrate() {
 
-  if calibrate_new(stepper1,(signed long)-NUDGE_LARGE)
-      if calibrate_new(stepper2,(signed long)-NUDGE_LARGE)
-          if calibrate_new(stepper3,(signed long)-NUDGE_LARGE)
-                            calibrate_new(stepper4,(signed long)-NUDGE_LARGE);
+  //if calibrate_new(stepper1,(signed long)-NUDGE_LARGE)
+ //     if calibrate_new(stepper2,(signed long)-NUDGE_LARGE)
+  //        if calibrate_new(stepper3,(signed long)-NUDGE_LARGE)
+    //                        calibrate_new(stepper4,(signed long)-NUDGE_LARGE);
   return;
 
   // TODO: This could be any number (infinite), since goes until limit switch. But for now
@@ -500,6 +507,15 @@ void sweep_to_zero() {
 }
 
 void sweep_to_end() {
+  
+  stepper1->reset_state();
+  stepper2->reset_state();
+  stepper3->reset_state();
+  
+  stepper1->pos_current = stepper1->pos_start;
+  stepper2->pos_current = stepper2->pos_start;
+  stepper3->pos_current = stepper3->pos_start;
+
     sweep_to(
        (signed long) (STEPPER1_END*STEPPER1_STEPS_PER_UNIT),
        (signed long) (STEPPER2_END*STEPPER2_STEPS_PER_UNIT),
