@@ -14,6 +14,16 @@
 //#define STEPPER4_STEPS_PER_UNIT (1600.0/4.0) /* Degrees. Empirical: not sure why "/4" */
 #define STEPPER4_STEPS_PER_UNIT (400/8.0)
 
+// Stepper 1: up/down scissors lifter: DIP? . Lookup table to support non-linear lift
+// Stepper 2: in/out: DIP? . lookup table to allow cosine motion
+// Stepper 3: rotational: DIP?  Constant steps.
+// Stepper 4 (Old #1) : horizontal : 200  . Constant steps.
+// limit1: Comes across the DB9 serial cable from the scissors lifter (new #1)
+// limit2: Comes from the horizontal motor bundle: (old motor #1)
+// limit3: Comes from the motor #2 bundle
+// limit4: No limit switch for motor 4 (horizontal) yet
+// Camera is the pair wired into the #3 bundle
+
 // Zero/middle point for Stepper1 is at 1300 steps away from "0" (due to non-linear scissors)
 // Zero/middle point for Stepper2?
 // Zero/middle point for Stepper3 is zero
@@ -92,8 +102,8 @@ void setup() {
 
     stepper1 = new StepperLUT8(1, DRIVER1_PULSE, DRIVER1_DIR, limit1, (signed long)(STEPPER1_START*STEPPER1_STEPS_PER_UNIT));
     stepper2 = new StepperLUT16(2, DRIVER2_PULSE, DRIVER2_DIR, limit2, (signed long)(STEPPER2_START*STEPPER2_STEPS_PER_UNIT)); 
-    stepper3 = new StepperConstant(3, DRIVER3_PULSE,DRIVER3_DIR, limit2, (signed long)(STEPPER3_START*STEPPER3_STEPS_PER_UNIT)); 
-    stepper4 = new StepperConstant(4, DRIVER4_PULSE,DRIVER4_DIR, limit2, (signed long)(STEPPER4_START*STEPPER4_STEPS_PER_UNIT)); 
+    stepper3 = new StepperConstant(3, DRIVER3_PULSE,DRIVER3_DIR, limit3, (signed long)(STEPPER3_START*STEPPER3_STEPS_PER_UNIT));
+    stepper4 = new StepperConstant(4, DRIVER4_PULSE,DRIVER4_DIR, limit3, (signed long)(STEPPER4_START*STEPPER4_STEPS_PER_UNIT));
 
     in_sweep=0;
 }
@@ -372,7 +382,7 @@ void loop() {
 
       unsigned long now = micros();
       if ( (now - sweep_snap_time ) >= SWEEP_SNAP_INTERVAL) {
-        digitalWrite(limit3,HIGH); // Tell camera to take a snap    
+        digitalWrite(camera_pulse,HIGH); // Tell camera to take a snap
 
         int error = (now-sweep_snap_time) - SWEEP_SNAP_INTERVAL;
         if (pos_curr==0)
@@ -391,7 +401,7 @@ void loop() {
         // Only exit the sweep after the last picture taken
         in_sweep = (stepper1->sweeping || stepper2->sweeping || stepper3->sweeping || stepper4->sweeping);
       } else {
-        digitalWrite(limit3,LOW);
+        digitalWrite(camera_pulse,LOW);
       }
       
       // Move if there is a confirmed sweep happening.
@@ -441,6 +451,7 @@ void sweep_horizontal(signed long pos, unsigned long duration, int mode) {
   sweep_snap_time=sweep_start_time-SWEEP_SNAP_INTERVAL; // So it'll trigger immediately on entry
 }
 
+#if 0
 void auto_calibrate() {
 
   //if calibrate_new(stepper1,(signed long)-NUDGE_LARGE)
@@ -487,6 +498,7 @@ void post_calibrate() {
   stepper1->start_move();
   stepper3->start_move();
 }
+#endif //0
 
 // Sweep modes: 1 (to start), 0 (to zero) 2 (to end)
 // Need these to handle the reversing that Motor 2 does
