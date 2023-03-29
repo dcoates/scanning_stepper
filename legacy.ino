@@ -63,7 +63,7 @@ void legacy_setup(){
   pinMode(limit3, INPUT);
 
   // Changed by us at UHCO:
-  pinMode(camera_pulse, output);     // Pulse triggers to cameras
+  pinMode(camera_pulse, OUTPUT);     // Pulse triggers to cameras
 }
 
 void legacy_loop() {

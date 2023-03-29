@@ -46,7 +46,7 @@
 #define BUTTON_HOLD_MS 1500
 #define LIMS_DEBOUNCE_PERIOD_US 30000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
 
-#define NUDGE_SMALL 10
+#define NUDGE_SMALL 31
 #define NUDGE_LARGE 100
 
 #define NUDGE_SMALL4 1
@@ -288,19 +288,6 @@ void process_serial_commands() {
         } else if (incomingByte=='p') {
           print_pos();
 
-        // Calibration:
-        } else if (incomingByte=='A') {
-          auto_calibrate(); // Really a sweep of only two motors
-        } else if (incomingByte=='C') {
-          post_calibrate(); // Reset positions, move back off limit
-        } else if (incomingByte=='0') {
-          zero_positions();
-        }
-        
-        //}  else if (incomingByte=='1') {
-        //    handle_motion(stepper1);
-        //}
-
         // Nudge commands: (follow top row of ASDF keyboard. -/+, then large/small is case
         else if (incomingByte=='Q') {handle_motion(stepper1,(signed long)-NUDGE_LARGE);}
         else if (incomingByte=='q') {handle_motion(stepper1,(signed long)-NUDGE_SMALL);}
@@ -451,7 +438,7 @@ void sweep_horizontal(signed long pos, unsigned long duration, int mode) {
   sweep_snap_time=sweep_start_time-SWEEP_SNAP_INTERVAL; // So it'll trigger immediately on entry
 }
 
-#if 0
+#if 1
 void auto_calibrate() {
 
   //if calibrate_new(stepper1,(signed long)-NUDGE_LARGE)
