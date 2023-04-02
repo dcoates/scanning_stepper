@@ -46,18 +46,12 @@
 #define BUTTON_HOLD_MS 1500
 #define LIMS_DEBOUNCE_PERIOD_US 10000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
 
-<<<<<<< HEAD
-#define NUDGE_SMALL 31
-#define NUDGE_LARGE 100
-=======
 #define NUDGE_SMALL1 100
 #define NUDGE_LARGE1 500
 #define NUDGE_SMALL2 100
 #define NUDGE_LARGE2 500
 #define NUDGE_SMALL3 31
 #define NUDGE_LARGE3 100
->>>>>>> 56ea9424698461a5c20747f8d2ef6d148eb9854c
-
 #define NUDGE_SMALL4 31
 #define NUDGE_LARGE4 100
 
