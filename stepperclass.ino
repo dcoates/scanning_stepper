@@ -203,8 +203,10 @@ void StepperState::read_limit() {
     if (((now - lims_last_stable_time) > LIMS_DEBOUNCE_PERIOD_US) )
       limit_hit=(lims_current==0);
       lims_state=lims_current;
-      Serial.print("On switch");
-      Serial.print(limit_hit);
+      if (limit_hit) {
+        Serial.print("On switch");
+        Serial.print(limit_hit);
+      };
   }
 
 }

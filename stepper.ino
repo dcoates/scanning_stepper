@@ -44,13 +44,22 @@
 
 #define SWEEP_TIME_SEC 3.0
 #define BUTTON_HOLD_MS 1500
-#define LIMS_DEBOUNCE_PERIOD_US 30000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
+#define LIMS_DEBOUNCE_PERIOD_US 10000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
 
+<<<<<<< HEAD
 #define NUDGE_SMALL 31
 #define NUDGE_LARGE 100
+=======
+#define NUDGE_SMALL1 100
+#define NUDGE_LARGE1 500
+#define NUDGE_SMALL2 100
+#define NUDGE_LARGE2 500
+#define NUDGE_SMALL3 31
+#define NUDGE_LARGE3 100
+>>>>>>> 56ea9424698461a5c20747f8d2ef6d148eb9854c
 
-#define NUDGE_SMALL4 1
-#define NUDGE_LARGE4 10
+#define NUDGE_SMALL4 31
+#define NUDGE_LARGE4 100
 
 #define REAL_SYSTEM 1 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
 
@@ -212,6 +221,7 @@ int calibrate_new(StepperState* which_motor, signed long amount) {
   while ( (digitalRead(m3go)==LOW)  && (!which_motor->limit_hit) )
   {
       which_motor->read_limit(); // debounce and read.
+      delay(1);
   }
   smooth_stop();
 
@@ -220,13 +230,17 @@ int calibrate_new(StepperState* which_motor, signed long amount) {
     return 0;
   }
 
+  handle_motion(which_motor, -amount); // Go opposite way for a bit
+
+#if 0
   if (which_motor->num_motor==1)
     // Correctly hit the limit switch. Reverse and go back a little until off the limit switch
     handle_motion(which_motor, 500);  // Go opposite direction the minimum amount
+  else if (which_motor->num_motor==2)
+    handle_motion(which_motor, 100);  // Go opposite direction the minimum amount
   else if (which_motor->num_motor==3)
     handle_motion(which_motor, 100);  // Go opposite direction the minimum amount
 
-#if 0
   while ( (digitalRead(m3go)==LOW)  && (which_motor->limit_hit) )
   {
       which_motor->read_limit(); // debounce and read.
@@ -289,30 +303,30 @@ void process_serial_commands() {
           print_pos();
 
         // Nudge commands: (follow top row of ASDF keyboard. -/+, then large/small is case
-        else if (incomingByte=='Q') {handle_motion(stepper1,(signed long)-NUDGE_LARGE);}
-        else if (incomingByte=='q') {handle_motion(stepper1,(signed long)-NUDGE_SMALL);}
-        else if (incomingByte=='w') {handle_motion(stepper1,(signed long)NUDGE_SMALL);}
-        else if (incomingByte=='W') {handle_motion(stepper1,(signed long)NUDGE_LARGE);}
+        else if (incomingByte=='Q') {handle_motion(stepper1,(signed long)-NUDGE_LARGE1);}
+        else if (incomingByte=='q') {handle_motion(stepper1,(signed long)-NUDGE_SMALL1);}
+        else if (incomingByte=='w') {handle_motion(stepper1,(signed long)NUDGE_SMALL1);}
+        else if (incomingByte=='W') {handle_motion(stepper1,(signed long)NUDGE_LARGE1);}
 
-        else if (incomingByte=='E') {handle_motion(stepper2,(signed long)-NUDGE_LARGE);}
-        else if (incomingByte=='e') {handle_motion(stepper2,(signed long)-NUDGE_SMALL);}
-        else if (incomingByte=='r') {handle_motion(stepper2,(signed long)NUDGE_SMALL);}
-        else if (incomingByte=='R') {handle_motion(stepper2,(signed long)NUDGE_LARGE);}
+        else if (incomingByte=='E') {handle_motion(stepper2,(signed long)-NUDGE_LARGE2);}
+        else if (incomingByte=='e') {handle_motion(stepper2,(signed long)-NUDGE_SMALL2);}
+        else if (incomingByte=='r') {handle_motion(stepper2,(signed long)NUDGE_SMALL2);}
+        else if (incomingByte=='R') {handle_motion(stepper2,(signed long)NUDGE_LARGE2);}
 
-        else if (incomingByte=='T') {handle_motion(stepper3,(signed long)-NUDGE_LARGE);}
-        else if (incomingByte=='t') {handle_motion(stepper3,(signed long)-NUDGE_SMALL);}
-        else if (incomingByte=='y') {handle_motion(stepper3,(signed long)NUDGE_SMALL);}
-        else if (incomingByte=='Y') {handle_motion(stepper3,(signed long)NUDGE_LARGE);}
+        else if (incomingByte=='T') {handle_motion(stepper3,(signed long)-NUDGE_LARGE3);}
+        else if (incomingByte=='t') {handle_motion(stepper3,(signed long)-NUDGE_SMALL3);}
+        else if (incomingByte=='y') {handle_motion(stepper3,(signed long)NUDGE_SMALL3);}
+        else if (incomingByte=='Y') {handle_motion(stepper3,(signed long)NUDGE_LARGE3);}
 
         else if (incomingByte=='U') {handle_motion(stepper4,(signed long)-NUDGE_LARGE4);}
         else if (incomingByte=='u') {handle_motion(stepper4,(signed long)-NUDGE_SMALL4);}
         else if (incomingByte=='i') {handle_motion(stepper4,(signed long)NUDGE_SMALL4);}
         else if (incomingByte=='I') {handle_motion(stepper4,(signed long)NUDGE_LARGE4);}
 
-        else if (incomingByte=='1') {calibrate_new(stepper1,(signed long)-NUDGE_SMALL);}
-        else if (incomingByte=='2') {calibrate_new(stepper2,(signed long)-NUDGE_LARGE);}
-        else if (incomingByte=='3') {calibrate_new(stepper3,(signed long)-NUDGE_LARGE*2);}
-        else if (incomingByte=='4') {calibrate_new(stepper4,(signed long)-NUDGE_LARGE);}
+        else if (incomingByte=='1') {calibrate_new(stepper1,(signed long)-NUDGE_LARGE1);}
+        else if (incomingByte=='2') {calibrate_new(stepper2,(signed long)-NUDGE_LARGE2);}
+        else if (incomingByte=='3') {calibrate_new(stepper3,(signed long)-NUDGE_LARGE3);}
+        //else if (incomingByte=='4') {calibrate_new(stepper4,(signed long)-NUDGE_LARGE);}
 
         else if (incomingByte=='x') {smooth_stop();}
 
@@ -412,10 +426,10 @@ void sweep_to(signed long pos1, signed long pos2, signed long pos3, unsigned lon
   Serial.println(duration);
 
   stepper1->prepare_move(  pos1,duration,mode);
-//  stepper2->prepare_move(  pos2,duration,mode);
+  stepper2->prepare_move(  pos2,duration,mode);
   stepper3->prepare_move(  pos3,duration,mode);
   stepper1->start_move();
-//  stepper2->start_move();
+  stepper2->start_move();
   stepper3->start_move();
   sweep_start_time=millis();
   
