@@ -43,9 +43,12 @@
 // -30 to +30 : 30.36mm
 
 #define SWEEP_TIME_SEC 3.0
+
+#define CAMERA_SNAP_INTERVAL_HORIZONTAL (3000000/7)
+#define CAMERA_SNAP_INTERVAL_VERTICAL (3000000/7)
+
 #define BUTTON_HOLD_MS 1500
 #define LIMS_DEBOUNCE_PERIOD_US 10000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
-
 #define NUDGE_SMALL1 100
 #define NUDGE_LARGE1 500
 #define NUDGE_SMALL2 100
@@ -88,12 +91,12 @@ unsigned long bad_now;
 unsigned long bad_elapsed;
 unsigned long bad_potime;
 
-// Every 100 ms: 10 * 3
+
 #define POS_BUF_SIZE 32 * 5
-#define SWEEP_SNAP_INTERVAL (3000000/7) // camera
 unsigned int pos_curr=0;
 signed long pos_buffer[POS_BUF_SIZE]; // Store tiime + pos for each motor
 unsigned long sweep_snap_time=0;
+unsigned long sweep_snap_interval;
 
 uint8_t in_sweep=0;
 void setup() {
@@ -377,10 +380,10 @@ void loop() {
 #endif // REAL_SYSTEM
 
       unsigned long now = micros();
-      if ( (now - sweep_snap_time ) >= SWEEP_SNAP_INTERVAL) {
+      if ( (now - sweep_snap_time ) >= sweep_snap_interval) {
         digitalWrite(camera_pulse,HIGH); // Tell camera to take a snap
 
-        int error = (now-sweep_snap_time) - SWEEP_SNAP_INTERVAL;
+        int error = (now-sweep_snap_time) - sweep_snap_interval;
         if (pos_curr==0)
           error=0; // no error on first one
           
@@ -431,7 +434,8 @@ void sweep_to(signed long pos1, signed long pos2, signed long pos3, unsigned lon
   in_sweep=1; // so main loop knows we are sweeping
   step_trace_counter=0;
   pos_curr=0;
-  sweep_snap_time=sweep_start_time-SWEEP_SNAP_INTERVAL; // So it'll trigger immediately on entry
+  sweep_snap_interval=(unsigned long)CAMERA_SNAP_INTERVAL_VERTICAL;
+  sweep_snap_time=sweep_start_time-sweep_snap_interval; // So it'll trigger immediately on entry
 }
 
 void sweep_horizontal(signed long pos, unsigned long duration, int mode) {
@@ -444,10 +448,11 @@ void sweep_horizontal(signed long pos, unsigned long duration, int mode) {
   in_sweep=1; // so main loop knows we are sweeping
   step_trace_counter=0;
   pos_curr=0;
-  sweep_snap_time=sweep_start_time-SWEEP_SNAP_INTERVAL; // So it'll trigger immediately on entry
+  sweep_snap_interval=(unsigned long)CAMERA_SNAP_INTERVAL_HORIZONTAL;
+  sweep_snap_time=sweep_start_time-sweep_snap_interval; // So it'll trigger immediately on entry
 }
 
-#if 1
+#if 0
 void auto_calibrate() {
 
   //if calibrate_new(stepper1,(signed long)-NUDGE_LARGE)
