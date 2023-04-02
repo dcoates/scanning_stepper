@@ -295,6 +295,7 @@ void process_serial_commands() {
           debug_blast();
         } else if (incomingByte=='p') {
           print_pos();
+        }
 
         // Nudge commands: (follow top row of ASDF keyboard. -/+, then large/small is case
         else if (incomingByte=='Q') {handle_motion(stepper1,(signed long)-NUDGE_LARGE1);}
