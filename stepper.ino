@@ -179,28 +179,6 @@ void debug_blast() {
   print_pos();
 }
 
-#if 0 // OLD WAY
-void handle_motion(StepperState* which_motor) {
-  int extent=Serial.read();
-  signed long amount=0;
-  
-  if (extent=='m')  amount=-5;
-  else if (extent=='M') amount=-50;
-  else if (extent=='p') amount=5;
-  else if (extent=='P') amount=50;
-
-  in_sweep=1;
-  which_motor->relative_sweep(amount,1);  // TODO MODE
-  Serial.println(amount);
-}
-
-void handle_motion2(StepperState* which_motor, signed long amount) {
-  // USe 1-character sgs
-  in_sweep=1;
-  which_motor->relative_sweep(amount, 1); // TODO MODE
-};
-#endif // OLD_WAY
-
 void handle_motion(StepperState* which_motor, signed long amount) {
   // Shouldn't look like a sweep. We want interrupts running, etc.
   in_sweep=0;
@@ -232,21 +210,6 @@ int calibrate_new(StepperState* which_motor, signed long amount) {
   }
 
   handle_motion(which_motor, -amount); // Go opposite way for a bit
-
-#if 0
-  if (which_motor->num_motor==1)
-    // Correctly hit the limit switch. Reverse and go back a little until off the limit switch
-    handle_motion(which_motor, 500);  // Go opposite direction the minimum amount
-  else if (which_motor->num_motor==2)
-    handle_motion(which_motor, 100);  // Go opposite direction the minimum amount
-  else if (which_motor->num_motor==3)
-    handle_motion(which_motor, 100);  // Go opposite direction the minimum amount
-
-  while ( (digitalRead(m3go)==LOW)  && (which_motor->limit_hit) )
-  {
-      which_motor->read_limit(); // debounce and read.
-  }
-#endif
 
   delay(1250); // 1250 for Motor  1 (lifter)
   smooth_stop();
@@ -455,55 +418,6 @@ void sweep_horizontal(signed long pos, unsigned long duration, int mode) {
   sweep_snap_interval=(unsigned long)CAMERA_SNAP_INTERVAL_HORIZONTAL;
   sweep_snap_time=sweep_start_time-sweep_snap_interval; // So it'll trigger immediately on entry
 }
-
-#if 0
-void auto_calibrate() {
-
-  //if calibrate_new(stepper1,(signed long)-NUDGE_LARGE)
- //     if calibrate_new(stepper2,(signed long)-NUDGE_LARGE)
-  //        if calibrate_new(stepper3,(signed long)-NUDGE_LARGE)
-    //                        calibrate_new(stepper4,(signed long)-NUDGE_LARGE);
-  return;
-
-  // TODO: This could be any number (infinite), since goes until limit switch. But for now
-  // Just use same magnitude as sweep.
-  stepper1->prepare_move( (signed long) (10*STEPPER1_START*STEPPER1_STEPS_PER_UNIT),0L,MODE_CALIBRATING); // Go a far until limit
-  stepper3->prepare_move( (signed long) (10*STEPPER3_START*STEPPER3_STEPS_PER_UNIT),0L,MODE_CALIBRATING);
-  stepper1->start_move();
-  stepper3->start_move();
-  sweep_start_time=millis();
-  
-  in_sweep=1; // so main loop knows we are sweeping
-  step_trace_counter=0;
-  pos_curr=0;
-  sweep_snap_time=sweep_start_time-SWEEP_SNAP_INTERVAL; // So it'll trigger immediately on entry
-}
-
-void zero_positions() {
-  stepper1->reset_state();
-  stepper2->reset_state();
-  stepper3->reset_state();
-  stepper4->reset_state();
-}
-
-void post_calibrate() {
-
-  in_sweep = 1;
-  
-  // After the calibration, set the positions to the "known" state
-  stepper1->reset_state();
-  stepper1->pos_current=STEPPER1_START*STEPPER1_STEPS_PER_UNIT-STEPS_TO_REVERSE_OFF_LIMIT;
-  // Getting off limit switch, so allow limit with this mode:
-  stepper1->relative_sweep(STEPS_TO_REVERSE_OFF_LIMIT,MODE_CALIBRATING_BACK);
-  
-  stepper3->reset_state();
-  stepper3->pos_current=STEPPER3_START*STEPPER3_STEPS_PER_UNIT-STEPS_TO_REVERSE_OFF_LIMIT;
-  stepper1->relative_sweep(STEPS_TO_REVERSE_OFF_LIMIT,MODE_CALIBRATING_BACK);
-  
-  stepper1->start_move();
-  stepper3->start_move();
-}
-#endif //0
 
 // Sweep modes: 1 (to start), 0 (to zero) 2 (to end)
 // Need these to handle the reversing that Motor 2 does
