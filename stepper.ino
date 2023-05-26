@@ -31,13 +31,13 @@
 // Where to begin the sweep. Button press left moves from "0" here
 #define STEPPER1_START (-35+13) 
 #define STEPPER2_START -800
-#define STEPPER3_START -200
+#define STEPPER3_START 100
 #define STEPPER4_START -35
 
 // Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (35 + 13)
 #define STEPPER2_END 0
-#define STEPPER3_END 200
+#define STEPPER3_END -100
 #define STEPPER4_END 35
 
 // -30 to +30 : 30.36mm
@@ -51,12 +51,16 @@
 #define LIMS_DEBOUNCE_PERIOD_US 10000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
 #define NUDGE_SMALL1 100
 #define NUDGE_LARGE1 500
-#define NUDGE_SMALL2 100
+#define NUDGE_SMALL2 250
 #define NUDGE_LARGE2 500
 #define NUDGE_SMALL3 31
 #define NUDGE_LARGE3 100
 #define NUDGE_SMALL4 31
 #define NUDGE_LARGE4 100
+
+#define STEP_BACK1 550
+#define STEP_BACK2 450
+#define STEP_BACK3 NUDGE_LARGE3
 
 #define REAL_SYSTEM 1 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
 
@@ -321,9 +325,9 @@ void process_serial_commands() {
         else if (incomingByte=='i') {handle_motion(stepper4,(signed long)NUDGE_SMALL4);}
         else if (incomingByte=='I') {handle_motion(stepper4,(signed long)NUDGE_LARGE4);}
 
-        else if (incomingByte=='1') {calibrate_new(stepper1,(signed long)-NUDGE_LARGE1);}
-        else if (incomingByte=='2') {calibrate_new(stepper2,(signed long)-NUDGE_LARGE2);}
-        else if (incomingByte=='3') {calibrate_new(stepper3,(signed long)-NUDGE_LARGE3);}
+        else if (incomingByte=='1') {calibrate_new(stepper1,(signed long)-STEP_BACK1);}
+        else if (incomingByte=='2') {calibrate_new(stepper2,(signed long)-STEP_BACK2);}
+        else if (incomingByte=='3') {calibrate_new(stepper3,(signed long)-STEP_BACK3);}
         //else if (incomingByte=='4') {calibrate_new(stepper4,(signed long)-NUDGE_LARGE);}
 
         else if (incomingByte=='x') {smooth_stop();}
