@@ -58,8 +58,8 @@
 #define NUDGE_SMALL4 31
 #define NUDGE_LARGE4 100
 
-#define STEP_BACK1 550
-#define STEP_BACK2 450
+#define STEP_BACK1 525 //500
+#define STEP_BACK2 850 //450
 #define STEP_BACK3 NUDGE_LARGE3
 
 #define REAL_SYSTEM 1 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
@@ -327,7 +327,7 @@ void process_serial_commands() {
 
         else if (incomingByte=='1') {calibrate_new(stepper1,(signed long)-STEP_BACK1);}
         else if (incomingByte=='2') {calibrate_new(stepper2,(signed long)-STEP_BACK2);}
-        else if (incomingByte=='3') {calibrate_new(stepper3,(signed long)-STEP_BACK3);}
+        else if (incomingByte=='3') {calibrate_new(stepper3,(signed long)STEP_BACK3);}
         //else if (incomingByte=='4') {calibrate_new(stepper4,(signed long)-NUDGE_LARGE);}
 
         else if (incomingByte=='x') {smooth_stop();}
