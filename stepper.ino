@@ -62,7 +62,7 @@
 #define STEP_BACK2 850 //450
 #define STEP_BACK3 NUDGE_LARGE3
 
-#define REAL_SYSTEM 1 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
+#define REAL_SYSTEM 0 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
 
 // These are shared between legacy.ino and this file
 // So that we can peek at the buttons
@@ -231,6 +231,8 @@ void smooth_stop() {
   in_sweep=0;
 };
 
+String str_move_amount= ""; // USed like global variable in move1
+
 void process_serial_commands() {
   
       // Check for serial commands
@@ -288,13 +290,22 @@ void process_serial_commands() {
         else if (incomingByte=='i') {handle_motion(stepper4,(signed long)NUDGE_SMALL4);}
         else if (incomingByte=='I') {handle_motion(stepper4,(signed long)NUDGE_LARGE4);}
 
-        else if (incomingByte=='1') {calibrate_new(stepper1,(signed long)-STEP_BACK1);}
-        else if (incomingByte=='2') {calibrate_new(stepper2,(signed long)-STEP_BACK2);}
-        else if (incomingByte=='3') {calibrate_new(stepper3,(signed long)STEP_BACK3);}
+        else if (incomingByte=='a') {calibrate_new(stepper1,(signed long)-STEP_BACK1);}
+        else if (incomingByte=='b') {calibrate_new(stepper2,(signed long)-STEP_BACK2);}
+        else if (incomingByte=='c') {calibrate_new(stepper3,(signed long)-STEP_BACK3);}
         //else if (incomingByte=='4') {calibrate_new(stepper4,(signed long)-NUDGE_LARGE);}
 
         else if (incomingByte=='x') {smooth_stop();}
 
+		// accumulate string
+		else if (incomingByte=='-') { str_move_amount += (char)incomingByte; }
+		else if (incomingByte>='0' && incomingByte<='9') { str_move_amount += (char)incomingByte; }
+
+		// Use the accumulated number:
+        else if (incomingByte=='A') {move1(stepper1);}
+        else if (incomingByte=='B') {move1(stepper2);}
+        else if (incomingByte=='C') {move1(stepper3);}
+        else if (incomingByte=='D') {move1(stepper4);}
     }
 }
 
@@ -379,6 +390,17 @@ void loop() {
 
   };
 }
+
+void move1(StepperState* which_motor) {
+  signed long amt=(signed long)str_move_amount.toInt();
+  which_motor->prepare_move_relative( amt,2.0*1000000.0, 1); //2 second
+  which_motor->start_move();
+  Serial.print("move1 ");
+  Serial.println(amt);
+  str_move_amount=""; // Reset for next time
+  in_sweep=1;
+}
+
 
 void sweep_to(signed long pos1, signed long pos2, signed long pos3, unsigned long duration, int mode) {
   Serial.print("Sweep ");

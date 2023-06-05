@@ -58,6 +58,10 @@ void StepperState::set_table_info(byte ntable) {
   table_interval_min=table_info[ntable][3];
 }
 
+void StepperState::prepare_move_relative(signed long pos_rel, unsigned long move_duration, int mode) {
+	prepare_move(pos_rel+pos_current,move_duration,mode);
+}
+
 // Save the endpoint and the step interval, set the direction pin 
 void StepperState::prepare_move(signed long pos_end, unsigned long move_duration, int mode) {
   mypos_end = pos_end;

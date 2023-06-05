@@ -105,10 +105,15 @@ def start(portname):
 def ser_command(arg,evnt):
     #print(arg)
     ser.write(arg)
-    
+
+def movex(arg,evnt):
+    s=('%s%c'%(E_amt.get(),chr(ord('A')+arg) )).encode()
+    ser.write(s)
+    #print(s)
+
 root = Tk()
 root.title('Scanning WFS - Simple Controller UI')
-root.geometry('768x512')
+root.geometry('900x512')
 f = ttk.Frame(root, width=512); f.grid()
 
 str_port=StringVar();
@@ -116,7 +121,7 @@ list_ports = ttk.Combobox(f,textvariable=str_port); add_coms( list_ports); list_
 #l_port = ttk.Label(f, text="Port"); l_port.grid(row=1, column=5, padx=5, pady=5)
 list_ports.bind("<<ComboboxSelected>>", lambda x: b_connect.configure(state="enable"))
 l_status = ttk.Label(f, text="NOT Connected", foreground='red'); l_status.grid(row=0, column=6, padx=5, pady=5)
-b_connect = ttk.Button(f, text="Connect!", command=partial(start,str_port),state='disable'); b_connect.grid(row=2,column=6, padx=5, pady=5)
+b_connect = ttk.Button(f, text="Connect!", command=partial(start,str_port),state='disable'); b_connect.grid(row=1,column=7, padx=5, pady=5)
 
 b_pos = ttk.Button(f, text="Get pos", command=getpos); b_pos.grid(row=1, column=2, padx=5, pady=5)
 l_p1 = ttk.Label(f, text="Pos1:"); l_p1.grid(row=2, column=2, padx=5, pady=5)
@@ -130,6 +135,12 @@ b_finesL=[ttk.Button(f, text='-%d'%(n+1)) for n in range(4)]
 b_coarsesL=[ttk.Button(f, text='--%d'%(n+1)) for n in range(4)]
 
 b_cals=[ttk.Button(f, text='CAL%d'%(n+1)) for n in range(4)]
+
+E_amt = Entry(f,textvariable=-100)
+E_amt.grid(row=6,column=6,padx=5,pady=5)
+
+
+b_moves=[ttk.Button(f, text='Move %d'%(n+1)) for n in range(4)]
 
 # Each one goes: --,-,+,++ . They are in the top letter row of an asdf keyboard. Caps for big.
 codes=[[b'Q',b'q',b'w',b'W'], [b'E',b'e',b'r',b'R'],[b'T',b't',b'y',b'Y'], [b'U',b'u',b'i',b'I'], [b'1',b'2',b'3',b'4'] ]
@@ -157,6 +168,10 @@ for nbutton,b1 in enumerate(b_coarsesR):
 for nbutton,b1 in enumerate(b_cals):
     b1.grid(row=nbutton+2,column=5,padx=5,pady=5)
     b1.bind('<ButtonPress-1>',partial(ser_command,codes[4][nbutton]))
+ 
+for nbutton,b1 in enumerate(b_moves):
+    b1.grid(row=nbutton+2,column=6,padx=5,pady=5)
+    b1.bind('<ButtonPress-1>',partial(movex,nbutton))
  
  # 2 letter commands:
  #   b1.bind('<ButtonRelease-1>',partial(coarse_stop,'%dM'%(nbutton+1)))

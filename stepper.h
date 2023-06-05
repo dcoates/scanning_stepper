@@ -17,6 +17,7 @@ public:
   void reset_state();
 
   void prepare_move(signed long pos_end, unsigned long move_duration, int mode);
+  void prepare_move_relative(signed long pos_rel, unsigned long move_duration, int mode);
   void start_move();
   void relative_sweep(signed long amount, int mode);
 
