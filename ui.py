@@ -143,7 +143,7 @@ E_amt.grid(row=6,column=6,padx=5,pady=5)
 b_moves=[ttk.Button(f, text='Move %d'%(n+1)) for n in range(4)]
 
 # Each one goes: --,-,+,++ . They are in the top letter row of an asdf keyboard. Caps for big.
-codes=[[b'Q',b'q',b'w',b'W'], [b'E',b'e',b'r',b'R'],[b'T',b't',b'y',b'Y'], [b'U',b'u',b'i',b'I'], [b'1',b'2',b'3',b'4'] ]
+codes=[[b'Q',b'q',b'w',b'W'], [b'E',b'e',b'r',b'R'],[b'T',b't',b'y',b'Y'], [b'U',b'u',b'i',b'I'], [b'a',b'b',b'c',b'd'] ]
 
 for nbutton,b1 in enumerate(b_coarsesL):
     b1.grid(row=nbutton+2,column=0,padx=5,pady=5)

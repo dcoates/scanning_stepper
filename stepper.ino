@@ -31,13 +31,13 @@
 // Where to begin the sweep. Button press left moves from "0" here
 #define STEPPER1_START (-35+13) 
 #define STEPPER2_START -800
-#define STEPPER3_START 100
+#define STEPPER3_START 95
 #define STEPPER4_START -35
 
 // Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (35 + 13)
 #define STEPPER2_END 0
-#define STEPPER3_END -100
+#define STEPPER3_END -95
 #define STEPPER4_END 35
 
 // -30 to +30 : 30.36mm
@@ -58,11 +58,11 @@
 #define NUDGE_SMALL4 31
 #define NUDGE_LARGE4 100
 
-#define STEP_BACK1 525 //500
+#define STEP_BACK1 500 //500
 #define STEP_BACK2 850 //450
 #define STEP_BACK3 NUDGE_LARGE3
 
-#define REAL_SYSTEM 0 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
+#define REAL_SYSTEM 1 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
 
 // These are shared between legacy.ino and this file
 // So that we can peek at the buttons
@@ -292,7 +292,7 @@ void process_serial_commands() {
 
         else if (incomingByte=='a') {calibrate_new(stepper1,(signed long)-STEP_BACK1);}
         else if (incomingByte=='b') {calibrate_new(stepper2,(signed long)-STEP_BACK2);}
-        else if (incomingByte=='c') {calibrate_new(stepper3,(signed long)-STEP_BACK3);}
+        else if (incomingByte=='c') {calibrate_new(stepper3,(signed long) STEP_BACK3);}
         //else if (incomingByte=='4') {calibrate_new(stepper4,(signed long)-NUDGE_LARGE);}
 
         else if (incomingByte=='x') {smooth_stop();}
