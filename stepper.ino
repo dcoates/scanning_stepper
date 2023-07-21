@@ -249,18 +249,9 @@ void process_serial_commands() {
           sweep_to_zero();
         }
         
-        else if (incomingByte=='s') {
-          sweep_horizontal(
-       (signed long) (STEPPER4_START*STEPPER4_STEPS_PER_UNIT),
-       SWEEP_TIME_SEC*1000000.0,1);
-        } else if (incomingByte=='f') {
-          sweep_horizontal(
-       (signed long) (STEPPER4_END*STEPPER4_STEPS_PER_UNIT),
-       SWEEP_TIME_SEC*1000000.0,2);
-        } else if (incomingByte=='z') {
-          sweep_horizontal(
-       (signed long) 0,
-       SWEEP_TIME_SEC*1000000.0,3);
+      } else if (incomingByte=='s') {horiz_sweep_start();}
+      } else if (incomingByte=='f') {horiz_sweep_end(); }
+      } else if (incomingByte=='z') {horiz_sweep_zero(); }
 
         // Debug/info
         } else if (incomingByte=='?') {
@@ -474,4 +465,22 @@ void sweep_to_end() {
        (signed long) (STEPPER2_END*STEPPER2_STEPS_PER_UNIT),
        (signed long) (STEPPER3_END*STEPPER3_STEPS_PER_UNIT),
       SWEEP_TIME_SEC*1000000.0, 2);
+}
+
+void horiz_sweep_start() {
+  sweep_horizontal(
+       (signed long) (STEPPER4_START*STEPPER4_STEPS_PER_UNIT),
+       SWEEP_TIME_SEC*1000000.0,1);
+}
+
+void horiz_sweep_end() {
+  sweep_horizontal(
+       (signed long) (STEPPER4_END*STEPPER4_STEPS_PER_UNIT),
+       SWEEP_TIME_SEC*1000000.0,2);
+}
+
+void horiz_sweep_zero() {
+  sweep_horizontal(
+       (signed long) 0,
+       SWEEP_TIME_SEC*1000000.0,3);
 }
