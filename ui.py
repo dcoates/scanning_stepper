@@ -40,6 +40,7 @@ def check_serial():
 
 def getpos():
     ser.write(b'p');
+
 def mov0():
     ser.write(b'Z');
 def mov1():
@@ -53,6 +54,14 @@ def movH1():
     ser.write(b's');
 def movH2():
     ser.write(b'f');
+    
+
+def movD0():
+    ser.write(b'O'); # Zero
+def movD1():
+    ser.write(b'I'); # Initial
+def movD2():
+    ser.write(b'L'); # Last
     
 def cal1():
     ser.write(b'A')
@@ -198,10 +207,15 @@ b_do0 = ttk.Button(f, text="Sweep Zero",  command=mov0); b_do0.grid(row=8, colum
 b_do2 = ttk.Button(f, text="Sweep End",   command=mov2); b_do2.grid(row=8, column=4, padx=5, pady=5)
 
 b_lHoriz = ttk.Label(f, text="Horizontal:"); b_lHoriz.grid(row=9, column=2, padx=5, pady=10)
-
 b_Hdo1 = ttk.Button(f, text="Sweep Start", command=movH1); b_Hdo1.grid(row=10, column=0, padx=5, pady=5)
 b_Hdo0 = ttk.Button(f, text="Sweep Zero",  command=movH0); b_Hdo0.grid(row=10, column=2, padx=5, pady=5)
 b_Hdo2 = ttk.Button(f, text="Sweep End",   command=movH2); b_Hdo2.grid(row=10, column=4, padx=5, pady=5)
+
+
+b_lDiag = ttk.Label(f, text="Diagonal:"); b_lDiag.grid(row=11, column=2, padx=5, pady=10)
+b_Ddo1 = ttk.Button(f, text="Sweep Start", command=movD1); b_Ddo1.grid(row=12, column=0, padx=5, pady=5)
+b_Ddo0 = ttk.Button(f, text="Sweep Zero",  command=movD0); b_Ddo0.grid(row=12, column=2, padx=5, pady=5)
+b_Ddo2 = ttk.Button(f, text="Sweep End",   command=movD2); b_Ddo2.grid(row=12, column=4, padx=5, pady=5)
 
 #b_test = ttk.Button(f, text="Test"); b_test.grid(row=5, column=3, padx=5, pady=5)
 #b_test.bind('<ButtonPress-1>',partial(fstart,1))
