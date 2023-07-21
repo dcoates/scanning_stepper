@@ -29,16 +29,19 @@
 // Zero/middle point for Stepper3 is zero
 
 // Where to begin the sweep. Button press left moves from "0" here
-#define STEPPER1_START (-35+13) 
-#define STEPPER2_START -800
+#define STEPPER1_START (-32.5+9.5) 
+#define STEPPER2_START -900
 #define STEPPER3_START 95
 #define STEPPER4_START -35
 
 // Where to sweep until. Button press right cases sweep until value is reached
-#define STEPPER1_END (35 + 13)
+#define STEPPER1_END (32.5+9.5)
 #define STEPPER2_END 0
 #define STEPPER3_END -95
 #define STEPPER4_END 35
+
+// Start some number of steps in the table
+#define TABLE_START1 250
 
 // -30 to +30 : 30.36mm
 
@@ -444,6 +447,10 @@ void sweep_horizontal(signed long pos, unsigned long duration, int mode) {
 // Sweep modes: 1 (to start), 0 (to zero) 2 (to end)
 // Need these to handle the reversing that Motor 2 does
 void sweep_to_start() {
+  stepper1->table_counter=0; // reset to start of LUT. Not totally accurate, but avoids going past table.
+  stepper2->table_counter=0;
+  stepper3->table_counter=0;
+  
   sweep_to(
        (signed long) (STEPPER1_START*STEPPER1_STEPS_PER_UNIT),
        (signed long) (STEPPER2_START*STEPPER2_STEPS_PER_UNIT),
@@ -452,7 +459,11 @@ void sweep_to_start() {
 }
 
 void sweep_to_zero() {
-  sweep_to(
+  stepper1->table_counter=0; // reset to start of LUT. Not totally accurate, but avoids going past table.
+  stepper2->table_counter=0;
+  stepper3->table_counter=0;
+  
+   sweep_to(
        (signed long) 0,
        (signed long) 0,
        (signed long) 0,
@@ -464,6 +475,8 @@ void sweep_to_end() {
   stepper1->reset_state();
   stepper2->reset_state();
   stepper3->reset_state();
+
+  stepper1->table_counter=TABLE_START1; // Start partway through the lookup table
   
   stepper1->pos_current = stepper1->pos_start;
   stepper2->pos_current = stepper2->pos_start;

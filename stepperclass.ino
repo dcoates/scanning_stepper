@@ -311,6 +311,7 @@ void StepperState::do_update() {
       // Mode==0 is normal moves, so we don't want to do the reversal in that case
       if ( (num_motor==2) && (pos_current==(signed int)STEPPER2_END) && (mode!=0) ) {
           set_table_info(2); // Reverse direction from different lut
+          table_counter=0;   // Reset the position pointer, to the beginning of the reversed LUT
           prepare_move( (signed long) STEPPER2_START, 0L, MODE_REVERSING); // This will reverse dir also and reset mypos_end, etc. //Reversing=mode 3
           start_move();  
       } else {
