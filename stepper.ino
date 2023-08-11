@@ -45,7 +45,8 @@
 
 // -30 to +30 : 30.36mm
 
-#define SWEEP_TIME_SEC 3.0
+#define SWEEP_TIME_SEC_H 4.0
+#define SWEEP_TIME_SEC_V 3.0
 
 #define CAMERA_SNAP_INTERVAL_HORIZONTAL (3000000/7)
 #define CAMERA_SNAP_INTERVAL_VERTICAL (3000000/7)
@@ -450,7 +451,7 @@ void sweep_to_start() {
        (signed long) (STEPPER1_START*STEPPER1_STEPS_PER_UNIT),
        (signed long) (STEPPER2_START*STEPPER2_STEPS_PER_UNIT),
        (signed long) (STEPPER3_START*STEPPER3_STEPS_PER_UNIT),
-      SWEEP_TIME_SEC*1000000.0, 1); 
+      SWEEP_TIME_SEC_V*1000000.0, 1); 
 }
 
 void sweep_to_zero() {
@@ -462,7 +463,7 @@ void sweep_to_zero() {
        (signed long) 0,
        (signed long) 0,
        (signed long) 0,
-      SWEEP_TIME_SEC*1000000.0, 0); 
+      SWEEP_TIME_SEC_V*1000000.0, 0); 
 }
 
 void sweep_to_end() {
@@ -481,23 +482,23 @@ void sweep_to_end() {
        (signed long) (STEPPER1_END*STEPPER1_STEPS_PER_UNIT),
        (signed long) (STEPPER2_END*STEPPER2_STEPS_PER_UNIT),
        (signed long) (STEPPER3_END*STEPPER3_STEPS_PER_UNIT),
-      SWEEP_TIME_SEC*1000000.0, 2);
+      SWEEP_TIME_SEC_V*1000000.0, 2);
 }
 
 void horiz_sweep_start() {
   sweep_horizontal(
        (signed long) (STEPPER4_START*STEPPER4_STEPS_PER_UNIT),
-       SWEEP_TIME_SEC*1000000.0,1);
+       SWEEP_TIME_SEC_H*1000000.0,1);
 }
 
 void horiz_sweep_end() {
   sweep_horizontal(
        (signed long) (STEPPER4_END*STEPPER4_STEPS_PER_UNIT),
-       SWEEP_TIME_SEC*1000000.0,2);
+       SWEEP_TIME_SEC_H*1000000.0,2);
 }
 
 void horiz_sweep_zero() {
   sweep_horizontal(
        (signed long) 0,
-       SWEEP_TIME_SEC*1000000.0,3);
+       SWEEP_TIME_SEC_H*1000000.0,3);
 }
