@@ -224,6 +224,8 @@ b_Ddo2 = ttk.Button(f, text="Sweep End",   command=movD2); b_Ddo2.grid(row=12, c
 #p.grid(column=2, row=2, padx=5, pady=5)
 
 ser=None
+#root.after(1000, lambda: start("COM5"))
+#start("COM5")
 root.mainloop()
 
 if not(ser==None):
