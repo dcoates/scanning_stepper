@@ -125,9 +125,10 @@ void StepperState::start_move() {
   }
 };
 
+// I don't think this is used.. Default to horizontal time
 void StepperState::relative_sweep(signed long amount, int mode) {
   prepare_move( (signed long) (pos_current+(signed long)amount),
-    SWEEP_TIME_SEC*1000000.0,
+    SWEEP_TIME_SEC_H*1000000.0,
     mode); // TODO: MODE
   start_move();
 }
