@@ -36,10 +36,11 @@ class CameraWindow(tk.Toplevel):
         self.num=num
         self.name="camera%d"%num # For config settings (..etc..)
 
+        self.update_camera=True
+
         geom=self.settings.get('%s_geometry'%self.name,DEFAULT_GEOMETRY )
         self.geometry(geom)
         self.title('Camera '+str(num))
-
 
         #colors = np.random.randint(0,255,(dim,dim),dtype='uint8' )
         #im = Image.fromarray(colors)
@@ -107,9 +108,14 @@ class CameraWindow(tk.Toplevel):
         #self.l.image=pi2
 
         #strings: XI_TRG_OFF, XI_TRG_EDGE_RISING
-    def set_camera_trigger_source(self,SOURCE):
-        self.cam.set_trigger_source(SOURCE)
-        #xidefs.XI_TRG_SOURCE['XI_TRG_EDGE_RISING']  
+    def set_camera_trigger_source(self,source='XI_TRG_OFF'):
+
+        self.update_camera= (source == 'XI_TRG_OFF')
+
+        if not (self.cam is None):
+            self.cam.stop_acquisition()
+            self.cam.set_trigger_source(source)
+            self.cam.start_acquisition()
 
     def snap(self):
         fname=get_unique_filename('image_%s'%self.name,'bmp',code='%s_%03d.%s',start=0)
@@ -148,7 +154,9 @@ class CameraWindow(tk.Toplevel):
         pi2=ImageTk.PhotoImage(image=im)
 
         if not (self.cam is None):
-            self.cam.get_image(self.img)
+            if self.update_camera: # While sweeping don't update
+                self.cam.get_image(self.img)
+
             self.data = self.img.get_image_data_numpy()
             self.im = Image.fromarray(self.data)
 

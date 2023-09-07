@@ -67,6 +67,7 @@ def mov0():
 def mov1():
     ser.write(b'S');
 def mov2():
+    set_trig_sweep() 
     ser.write(b'F');
 
 def movH0():
@@ -74,6 +75,7 @@ def movH0():
 def movH1():
     ser.write(b's');
 def movH2():
+    set_trig_sweep() 
     ser.write(b'f');
 
 def movD0():
@@ -81,7 +83,16 @@ def movD0():
 def movD1():
     ser.write(b'I'); # Initial
 def movD2():
+    set_trig_sweep() 
     ser.write(b'L'); # Last
+
+def set_trig_sweep():
+    theApp.cam0.set_camera_trigger_source('XI_TRG_EDGE_RISING')
+    theApp.cam1.set_camera_trigger_source('XI_TRG_EDGE_RISING')
+
+def reset_trig():
+    theApp.cam0.set_camera_trigger_source()
+    theApp.cam1.set_camera_trigger_source()
     
 # These won't work since the widget's aren't exposed:    
 def cal1():
@@ -213,6 +224,8 @@ class App(Frame):
         b_Ddo1 = ttk.Button(f, text="Sweep Start", command=movD1); b_Ddo1.grid(row=12, column=0, padx=5, pady=5)
         b_Ddo0 = ttk.Button(f, text="Sweep Zero",  command=movD0); b_Ddo0.grid(row=12, column=2, padx=5, pady=5)
         b_Ddo2 = ttk.Button(f, text="Sweep End",   command=movD2); b_Ddo2.grid(row=12, column=4, padx=5, pady=5)
+
+        b_reset_trigger = ttk.Button(f, text="Reset Cam. Trig", command=reset_trig); b_reset_trigger.grid(row=12, column=6, padx=5, pady=5)
 
 ser=None
 
