@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<settings>
+    <autoconnect>None</autoconnect>
+    <baudrate>115200</baudrate>
+    <camera_preview>1</camera_preview>
+    <camera_update_rate_ms>50</camera_update_rate_ms>
+    <camera0_gain>0</camera0_gain>
+</settings>
