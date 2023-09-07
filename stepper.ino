@@ -1,4 +1,4 @@
-  #include "stepper.h"
+#include "stepper.h"
 #include "driver_unit.h"
 #include "digitalWriteFast.h"
 
@@ -48,8 +48,8 @@
 #define SWEEP_TIME_SEC_H 4.0
 #define SWEEP_TIME_SEC_V 3.0
 
-#define CAMERA_SNAP_INTERVAL_HORIZONTAL (3000000/7)
-#define CAMERA_SNAP_INTERVAL_VERTICAL (3000000/7) //diagonal scan uses snap interval from vertical scan. accurate up to 10-20 ms (?)
+#define CAMERA_SNAP_INTERVAL_HORIZONTAL (4000000/15) //3s/7 for GY data
+#define CAMERA_SNAP_INTERVAL_VERTICAL (3000000/9) //diagonal scan uses snap interval from vertical scan. accurate up to 10-20 ms (?)
 
 #define BUTTON_HOLD_MS 1500
 #define LIMS_DEBOUNCE_PERIOD_US 10000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
@@ -334,6 +334,19 @@ void loop() {
     } 
 #endif // REAL_SYSTEM
 
+#if 0 // don't do this. Problem is we don't know when the sweep starts for proper grab
+    // New: send camera pulses ieven if not sweeping
+      now = micros();
+      if ( (now - sweep_snap_time ) >= sweep_snap_interval) {
+        digitalWrite(camera_pulse,HIGH); // Tell camera to take a snap
+
+         sweep_snap_time = now; // try to get the next one to happen a little earlier
+
+      } else {
+        digitalWrite(camera_pulse,LOW);
+      }
+#endif //0
+      
   } else { // In a sweep
 #if REAL_SYSTEM
     // Failsafe: touch right GO button to stop. Don't even debounce: bail immediately if any button action.
