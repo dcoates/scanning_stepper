@@ -1,4 +1,4 @@
-  #include "stepper.h"
+#include "stepper.h"
 #include "driver_unit.h"
 #include "digitalWriteFast.h"
 
@@ -29,13 +29,13 @@
 // Zero/middle point for Stepper3 is zero
 
 // Where to begin the sweep. Button press left moves from "0" here
-#define STEPPER1_START (-32.5+9.5) 
+#define STEPPER1_START (-32.5+10) 
 #define STEPPER2_START -900
 #define STEPPER3_START 95
 #define STEPPER4_START -35
 
 // Where to sweep until. Button press right cases sweep until value is reached
-#define STEPPER1_END (32.5+9.5)
+#define STEPPER1_END (32.5+10)
 #define STEPPER2_END 0
 #define STEPPER3_END -95
 #define STEPPER4_END 35
@@ -48,8 +48,8 @@
 #define SWEEP_TIME_SEC_H 4.0
 #define SWEEP_TIME_SEC_V 3.0
 
-#define CAMERA_SNAP_INTERVAL_HORIZONTAL (3000000/7)
-#define CAMERA_SNAP_INTERVAL_VERTICAL (3000000/7)
+#define CAMERA_SNAP_INTERVAL_HORIZONTAL (4000000/15) //3s/7 for GY data
+#define CAMERA_SNAP_INTERVAL_VERTICAL (3000000/9) //diagonal scan uses snap interval from vertical scan. accurate up to 10-20 ms (?)
 
 #define BUTTON_HOLD_MS 1500
 #define LIMS_DEBOUNCE_PERIOD_US 10000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
@@ -58,12 +58,12 @@
 #define NUDGE_SMALL2 250
 #define NUDGE_LARGE2 500
 #define NUDGE_SMALL3 31
-#define NUDGE_LARGE3 100
+#define NUDGE_LARGE3 123
 #define NUDGE_SMALL4 31
 #define NUDGE_LARGE4 100
 
-#define STEP_BACK1 500 //500
-#define STEP_BACK2 850 //450
+#define STEP_BACK1 800 //500
+#define STEP_BACK2 4450 // 850 //450
 #define STEP_BACK3 NUDGE_LARGE3
 
 #define REAL_SYSTEM 1 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
@@ -334,6 +334,19 @@ void loop() {
     } 
 #endif // REAL_SYSTEM
 
+#if 0 // don't do this. Problem is we don't know when the sweep starts for proper grab
+    // New: send camera pulses ieven if not sweeping
+      now = micros();
+      if ( (now - sweep_snap_time ) >= sweep_snap_interval) {
+        digitalWrite(camera_pulse,HIGH); // Tell camera to take a snap
+
+         sweep_snap_time = now; // try to get the next one to happen a little earlier
+
+      } else {
+        digitalWrite(camera_pulse,LOW);
+      }
+#endif //0
+      
   } else { // In a sweep
 #if REAL_SYSTEM
     // Failsafe: touch right GO button to stop. Don't even debounce: bail immediately if any button action.
