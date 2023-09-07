@@ -45,17 +45,17 @@ def check_serial():
         print('Ser:', lin, end='', flush=True)
 
         if b'ready' in lin:
-            l_status.configure(text='READY', foreground='green' )
+            theApp.l_status.configure(text='READY', foreground='green' )
         elif b'pos1' in lin:
-            l_p1.configure(text=lin[0:])
+            theApp.l_p1.configure(text=lin[0:])
         elif b'pos2' in lin:
-            l_p2.configure(text=lin[0:])
+            theApp.l_p2.configure(text=lin[0:])
         elif b'pos3' in lin:
-            l_p3.configure(text=lin[0:])
+            theApp.l_p3.configure(text=lin[0:])
         elif b'pos4' in lin:
-            l_p4.configure(text=lin[0:])
+            theApp.l_p4.configure(text=lin[0:])
 
-    self.after(10, lambda: check_serial()) # Poll often (10ms)
+    theApp.after(10, lambda: check_serial()) # Poll often (10ms)
 
 def getpos():
     ser.write(b'p');
@@ -83,6 +83,7 @@ def movD1():
 def movD2():
     ser.write(b'L'); # Last
     
+# These won't work since the widget's aren't exposed:    
 def cal1():
     ser.write(b'A')
     b_cal2.configure(state="enable")
@@ -98,9 +99,8 @@ def zero_pos():
 
 def start(portname):
     global ser
-
     ser=serial.Serial(portname,baudrate=SETTINGS['baudrate'],timeout=0)
-    self.after(10, lambda: check_serial())
+    theApp.after(10, lambda: check_serial())
 
 def ser_command(arg,evnt):
     ser.write(arg)
@@ -125,14 +125,15 @@ class App(Frame):
         list_ports = ttk.Combobox(f,textvariable=str_port); add_coms( list_ports); list_ports.grid(row=1, column=6,padx=5,pady=5)
         #l_port = ttk.Label(f, text="Port"); l_port.grid(row=1, column=5, padx=5, pady=5)
         list_ports.bind("<<ComboboxSelected>>", lambda x: b_connect.configure(state="enable"))
-        l_status = ttk.Label(f, text="NOT Connected", foreground='red'); l_status.grid(row=0, column=6, padx=5, pady=5)
-        b_connect = ttk.Button(f, text="Connect!", command=partial(start,str_port.get() ),state='disable'); b_connect.grid(row=1,column=7, padx=5, pady=5)
+        self.l_status = ttk.Label(f, text="NOT Connected", foreground='red'); self.l_status.grid(row=0, column=6, padx=5, pady=5)
+        self.b_connect = ttk.Button(f, text="Connect!", command=partial(start,str_port.get() ),state='disable')
+        self.b_connect.grid(row=1,column=7, padx=5, pady=5)
 
-        b_pos = ttk.Button(f, text="Get pos", command=getpos); b_pos.grid(row=1, column=2, padx=5, pady=5)
-        l_p1 = ttk.Label(f, text="Pos1:"); l_p1.grid(row=2, column=2, padx=5, pady=5)
-        l_p2 = ttk.Label(f, text="Pos2:"); l_p2.grid(row=3, column=2, padx=5, pady=5)
-        l_p3 = ttk.Label(f, text="Pos3:"); l_p3.grid(row=4, column=2, padx=5, pady=5)
-        l_p4 = ttk.Label(f, text="Pos4:"); l_p4.grid(row=5, column=2, padx=5, pady=5)
+        b_pos = ttk.Button(f, text="Get pos", command=getpos).grid(row=1, column=2, padx=5, pady=5)
+        self.l_p1 = ttk.Label(f, text="Pos1:"); self.l_p1.grid(row=2, column=2, padx=5, pady=5)
+        self.l_p2 = ttk.Label(f, text="Pos2:"); self.l_p2.grid(row=3, column=2, padx=5, pady=5)
+        self.l_p3 = ttk.Label(f, text="Pos3:"); self.l_p3.grid(row=4, column=2, padx=5, pady=5)
+        self.l_p4 = ttk.Label(f, text="Pos4:"); self.l_p4.grid(row=5, column=2, padx=5, pady=5)
 
         b_finesR=[ttk.Button(f, text='%d+'%(n+1)) for n in range(4)]
         b_coarsesR=[ttk.Button(f, text='%d++'%(n+1)) for n in range(4)]
@@ -226,7 +227,7 @@ if int(SETTINGS['camera_preview'])>0:
 
 
 if not(SETTINGS['autoconnect'] is None) and not (SETTINGS['autoconnect']=="None"):
-    root.after(100, partial(start,SETTINGS['autoconnect']) )
+    theApp.after(100, partial(start,SETTINGS['autoconnect']) )
 
 theApp.mainloop()
 
