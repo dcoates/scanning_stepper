@@ -239,6 +239,7 @@ class App(Frame):
 
         self.l_name = ttk.Label(f, text="Subject ID:", anchor=tkinter.E); self.l_name.grid(row=11, column=5, padx=0, pady=5)
         self.str_filename=StringVar(); #"Enter Subject ID");
+        self.str_filename.set("TEST")
         e_sweep_filename = ttk.Entry(f, textvariable=self.str_filename); e_sweep_filename.grid(row=11, column=6, padx=5, pady=5)
         b_reset_trigger = ttk.Button(f, text="Reset Cam. Trig", command=reset_trig); b_reset_trigger.grid(row=12, column=6, padx=5, pady=5)
 
