@@ -1,9 +1,13 @@
 from tkinter import *
 from tkinter import ttk
+import tkinter
 import serial
 from serial.tools.list_ports import comports
 from functools import partial
 import xml.etree.ElementTree as ET
+
+import os
+import os.path
 
 import camera_window
 
@@ -28,6 +32,7 @@ def write_config(settings, fname='./config.xml'):
     ET.indent(tree, '    ')
     ET.ElementTree(tree).write(fname,encoding='utf-8',xml_declaration=True)
 
+## Serial stuff:
 def add_coms(lb):
     lports = comports()
     list_ports=[]
@@ -67,7 +72,7 @@ def mov0():
 def mov1():
     ser.write(b'S');
 def mov2():
-    set_trig_sweep() 
+    start_sweep('V')
     ser.write(b'F');
 
 def movH0():
@@ -75,7 +80,7 @@ def movH0():
 def movH1():
     ser.write(b's');
 def movH2():
-    set_trig_sweep() 
+    start_sweep('H') 
     ser.write(b'f');
 
 def movD0():
@@ -83,16 +88,23 @@ def movD0():
 def movD1():
     ser.write(b'I'); # Initial
 def movD2():
-    set_trig_sweep() 
+    start_sweep('D') 
     ser.write(b'L'); # Last
 
-def set_trig_sweep():
-    theApp.cam0.set_camera_trigger_source('XI_TRG_EDGE_RISING')
-    theApp.cam1.set_camera_trigger_source('XI_TRG_EDGE_RISING')
+def start_sweep(str_which):
+    path_sweepfiles=theApp.str_filename.get()
+    if not(os.path.exists(path_sweepfiles)):
+        os.mkdir(path_sweepfiles)
+    filename0='%s/sweep_cam%d_%s'%(path_sweepfiles,0,str_which)
+    filename1='%s/sweep_cam%d_%s'%(path_sweepfiles,1,str_which)
+    theApp.cam0.start_sweep(filename0)
+    theApp.cam1.start_sweep(filename1)
 
 def reset_trig():
-    theApp.cam0.set_camera_trigger_source()
-    theApp.cam1.set_camera_trigger_source()
+    theApp.cam0.stop_sweep()
+    theApp.cam1.stop_sweep()
+    #theApp.cam0.set_camera_trigger_source()
+    #theApp.cam1.set_camera_trigger_source()
     
 # These won't work since the widget's aren't exposed:    
 def cal1():
@@ -225,6 +237,9 @@ class App(Frame):
         b_Ddo0 = ttk.Button(f, text="Sweep Zero",  command=movD0); b_Ddo0.grid(row=12, column=2, padx=5, pady=5)
         b_Ddo2 = ttk.Button(f, text="Sweep End",   command=movD2); b_Ddo2.grid(row=12, column=4, padx=5, pady=5)
 
+        self.l_name = ttk.Label(f, text="Subject ID:", anchor=tkinter.E); self.l_name.grid(row=11, column=5, padx=0, pady=5)
+        self.str_filename=StringVar(); #"Enter Subject ID");
+        e_sweep_filename = ttk.Entry(f, textvariable=self.str_filename); e_sweep_filename.grid(row=11, column=6, padx=5, pady=5)
         b_reset_trigger = ttk.Button(f, text="Reset Cam. Trig", command=reset_trig); b_reset_trigger.grid(row=12, column=6, padx=5, pady=5)
 
 ser=None

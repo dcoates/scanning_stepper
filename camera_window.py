@@ -37,6 +37,8 @@ class CameraWindow(tk.Toplevel):
         self.name="camera%d"%num # For config settings (..etc..)
 
         self.update_camera=True
+        self.sweeping=False
+        self.sweep_image_save_filename="" # Needs to be set before starting sweep
 
         geom=self.settings.get('%s_geometry'%self.name,DEFAULT_GEOMETRY )
         self.geometry(geom)
@@ -108,14 +110,25 @@ class CameraWindow(tk.Toplevel):
         #self.l.image=pi2
 
         #strings: XI_TRG_OFF, XI_TRG_EDGE_RISING
+        # DRC: needed? self.cam.set_gpo_selector("XI_GPO_PORT1") TODO
     def set_camera_trigger_source(self,source='XI_TRG_OFF'):
 
-        self.update_camera= (source == 'XI_TRG_OFF')
+        #self.update_camera= (source == 'XI_TRG_OFF')
 
         if not (self.cam is None):
             self.cam.stop_acquisition()
             self.cam.set_trigger_source(source)
             self.cam.start_acquisition()
+
+    def start_sweep(self,sweep_image_filname):
+        self.sweep_image_save_filename=sweep_image_filname
+        self.sweeping=True
+        self.set_camera_trigger_source('XI_TRG_EDGE_RISING')
+        #set_camera_trigger_source('XI_GPO_PORT1')
+
+    def stop_sweep(self,sweep_image_filname):
+        self.sweeping=False
+        set_camera_trigger_source('XI_TRG_OFF')
 
     def snap(self):
         fname=get_unique_filename('image_%s'%self.name,'bmp',code='%s_%03d.%s',start=0)
@@ -146,16 +159,14 @@ class CameraWindow(tk.Toplevel):
         self.settings['%s_geometry'%self.name]=self.geometry()
 
     def updater(self):
-        #colors = [random.randint(0,255) for j in range(0,dim*dim)]
-        #colors = np.array(colors);
-        colors = np.random.randint(0,255,(dim,dim),dtype='uint8' )
-        im = Image.fromarray(colors)
-        pi = tk.PhotoImage(im)
-        pi2=ImageTk.PhotoImage(image=im)
-
+        valid_image=False
+        # If there is a camera, use it.
+        # (Can be either free-running or GPIO triggered.)
+        # Hopefully the GPIO triggered slows this loop down
         if not (self.cam is None):
-            if self.update_camera: # While sweeping don't update
-                self.cam.get_image(self.img)
+            #if self.update_camera: # While sweeping don't update
+            self.cam.get_image(self.img)
+            valid_image=True
 
             self.data = self.img.get_image_data_numpy()
             self.im = Image.fromarray(self.data)
@@ -166,7 +177,15 @@ class CameraWindow(tk.Toplevel):
 
             pi2=ImageTk.PhotoImage(im_resized) #,mode='L')
         else:
-            pass
+            colors = np.random.randint(0,255,(dim,dim),dtype='uint8' )
+            self.im = Image.fromarray(colors)
+            pi = tk.PhotoImage(self.im)
+            pi2=ImageTk.PhotoImage(image=self.im)
+
+        # IF there is a real camera image, and we are sweeping, save the file
+        if self.sweeping and valid_image:
+            filename=get_unique_filename(self.sweep_image_save_filename,'bmp',code='%s_%03d.%s',start=0)
+            self.im.save(filename)
 
         # For now, need both these lines. NOT GOOD. TODO
         self.c.create_image(0,0, image=pi2, anchor=tk.NW)
