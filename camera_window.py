@@ -126,7 +126,7 @@ class CameraWindow(tk.Toplevel):
         self.set_camera_trigger_source('XI_TRG_EDGE_RISING')
         #set_camera_trigger_source('XI_GPO_PORT1')
 
-    def stop_sweep(self,sweep_image_filname):
+    def stop_sweep(self):
         self.sweeping=False
         set_camera_trigger_source('XI_TRG_OFF')
 
