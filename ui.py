@@ -41,7 +41,7 @@ def add_coms(lb):
         #lb.insert(nport+1,port1.device) # For a listbox
         list_ports += [port1.device]
     lb['values']=list_ports
-    
+
 def check_serial():
     global ser
 
@@ -80,7 +80,7 @@ def movH0():
 def movH1():
     ser.write(b's');
 def movH2():
-    start_sweep('H') 
+    start_sweep('H')
     ser.write(b'f');
 
 def movD0():
@@ -88,15 +88,26 @@ def movD0():
 def movD1():
     ser.write(b'I'); # Initial
 def movD2():
-    start_sweep('D') 
+    start_sweep('D')
     ser.write(b'L'); # Last
 
-def start_sweep(str_which):
+def start_sweep(str_which,path_results_base='results'):
     path_sweepfiles=theApp.str_filename.get()
-    if not(os.path.exists(path_sweepfiles)):
-        os.mkdir(path_sweepfiles)
-    filename0='%s/sweep_cam%d_%s'%(path_sweepfiles,0,str_which)
-    filename1='%s/sweep_cam%d_%s'%(path_sweepfiles,1,str_which)
+    if not(os.path.exists(path_results_base)):
+        os.mkdir(path_results_base)
+    if not(os.path.exists(os.path.join(path_results_base,path_sweepfiles))):
+        os.mkdir(os.path.join(path_results_base,path_sweepfiles))
+    nSweep=0
+    while True:
+        fullpath=os.path.join(path_results_base,path_sweepfiles,'sweep_%02d'%nSweep )
+        if os.path.exists(fullpath):
+            nSweep += 1
+        else:
+            os.mkdir(fullpath)
+            break
+
+    filename0=os.path.join(fullpath,'sweep_cam%d_%s'%(0,str_which) )
+    filename1=os.path.join(fullpath,'sweep_cam%d_%s'%(1,str_which) )
     theApp.cam0.start_sweep(filename0)
     theApp.cam1.start_sweep(filename1)
 
@@ -105,8 +116,8 @@ def reset_trig():
     theApp.cam1.stop_sweep()
     #theApp.cam0.set_camera_trigger_source()
     #theApp.cam1.set_camera_trigger_source()
-    
-# These won't work since the widget's aren't exposed:    
+
+# These won't work since the widget's aren't exposed:
 def cal1():
     ser.write(b'A')
     b_cal2.configure(state="enable")
@@ -177,12 +188,12 @@ class App(Frame):
             b1.grid(row=nbutton+2,column=0,padx=5,pady=5)
             b1.bind('<ButtonPress-1>',partial(ser_command,codes[nbutton][0]))
             b1.bind('<ButtonRelease-1>',partial(ser_command,b'x'))
-         
+
         for nbutton,b1 in enumerate(b_finesL):
             b1.grid(row=nbutton+2,column=1,padx=5,pady=5)
             b1.bind('<ButtonPress-1>',partial(ser_command,codes[nbutton][1]))
             b1.bind('<ButtonRelease-1>',partial(ser_command,b'x'))
-            
+
         for nbutton,b1 in enumerate(b_finesR):
             b1.grid(row=nbutton+2,column=3,padx=5,pady=5)
             b1.bind('<ButtonPress-1>',partial(ser_command,codes[nbutton][2] )  )
@@ -196,11 +207,11 @@ class App(Frame):
         for nbutton,b1 in enumerate(b_cals):
             b1.grid(row=nbutton+2,column=5,padx=5,pady=5)
             b1.bind('<ButtonPress-1>',partial(ser_command,codes[4][nbutton]))
-         
+
         for nbutton,b1 in enumerate(b_moves):
             b1.grid(row=nbutton+2,column=6,padx=5,pady=5)
             b1.bind('<ButtonPress-1>',partial(movex,nbutton))
-         
+
         b_cal1 = ttk.Button(f, text="Cal1", command=cal1); b_cal1.grid(row=0, column=0, padx=5, pady=5)
         b_cal2 = ttk.Button(f, text="Cal unlimit", command=cal2,state='enable'); b_cal2.grid(row=0, column=1, padx=5, pady=5)
         b_cal0 = ttk.Button(f, text="Zero Pos.", command=zero_pos,state='enable'); b_cal0.grid(row=0, column=3, padx=5, pady=5)
@@ -209,7 +220,7 @@ class App(Frame):
         b_cal1.configure(state="disable")
         b_cal2.configure(state="disable")
         b_cal0.configure(state="disable")
-            
+
         b_calX = ttk.Button(f, text="Cal ALL", command=cal1); b_calX.grid(row=1, column=5, padx=5, pady=5)
 
         # Row/column sizes: w is parent widget
