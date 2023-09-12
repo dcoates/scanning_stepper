@@ -8,8 +8,9 @@ import os.path
 
 
 # multiwin originally from: https://www.pythontutorial.net/tkinter/tkinter-toplevel/
-UPDATE_RATE_MS=50
 DEFAULT_GEOMETRY="256x256+10+10"
+
+ASPECT_RATIO=1280.0/1024
 
 dim=512
 def rgb2Hex(rgb_tuple):
@@ -44,6 +45,8 @@ class CameraWindow(tk.Toplevel):
         self.geometry(geom)
         self.title('Camera '+str(num))
 
+        self.nTimeouts=0
+                
         #colors = np.random.randint(0,255,(dim,dim),dtype='uint8' )
         #im = Image.fromarray(colors)
         #pi = tk.PhotoImage(im)
@@ -52,8 +55,8 @@ class CameraWindow(tk.Toplevel):
         #self.c = tk.Canvas(tk, width=parent.width, height=parent.height-100); c.pack()
 
         # Start the periodic updates
-        self.after(UPDATE_RATE_MS, self.updater)
-
+        self.after(self.settings['camera_update_rate_ms'], self.updater)
+        
         self.bind("<Configure>", self.on_window_resize)
 
         self.val_exposure=tk.DoubleVar()
@@ -69,16 +72,24 @@ class CameraWindow(tk.Toplevel):
 
             self.label1 = tk.Label(self)
             self.label1.pack(expand=True)
-            self.slider1 = tk.Scale(self,  showvalue=False, 
-                    #from_=np.log10(self.expo_min), to=np.log10(self.expo_max), orient=tk.HORIZONTAL, resolution=0.05,
+            
+            if self.settings['%s_exposure_log'%self.name]:
+                self.slider1 = tk.Scale(self,  showvalue=False, 
+                    from_=np.ceil(np.log10(self.expo_min)), to=np.floor( np.log10(self.expo_max) ), orient=tk.HORIZONTAL, resolution=0.05,
+                    command=self.slider1_changed, variable=self.val_exposure)
+            else:
+                self.slider1 = tk.Scale(self,  showvalue=False, 
                     from_=(self.expo_min), to=(self.expo_max), orient=tk.HORIZONTAL, #resolution=0.05,
-                    command=self.slider1_changed, variable=self.val_exposure) 
+                    command=self.slider1_changed, variable=self.val_exposure)
 
             # TODO: Read these defaults from the config file
             expo=float( self.settings.get('%s_exposure'%self.name,self.expo_min) )
             self.slider1.pack(fill=tk.X)
-            self.slider1.set( (expo) )
-
+            if self.settings['%s_exposure_log'%self.name]:
+                self.slider1.set( np.log10(expo) )
+            else:
+                self.slider1.set( (expo) )
+                
             self.label2 = tk.Label(self)
             self.label2.pack(expand=True)
             self.slider2 = tk.Scale(self, from_=self.gain_min, to=self.gain_max,
@@ -126,9 +137,9 @@ class CameraWindow(tk.Toplevel):
         self.set_camera_trigger_source('XI_TRG_EDGE_RISING')
         #set_camera_trigger_source('XI_GPO_PORT1')
 
-    def stop_sweep(self,sweep_image_filname):
+    def stop_sweep(self):
         self.sweeping=False
-        set_camera_trigger_source('XI_TRG_OFF')
+        self.set_camera_trigger_source('XI_TRG_OFF')
 
     def snap(self):
         fname=get_unique_filename('image_%s'%self.name,'bmp',code='%s_%03d.%s',start=0)
@@ -136,8 +147,10 @@ class CameraWindow(tk.Toplevel):
         return
 
     def slider1_changed(self,event):
-        #val=10**self.slider1.get()
-        val=self.slider1.get()
+        if self.settings['%s_exposure_log'%self.name]:    
+            val=10**self.slider1.get()
+        else:
+            val=self.slider1.get()
         if not( self.cam is None):
             self.cam.set_exposure(val)
         self.settings['%s_exposure'%self.name]=val
@@ -164,16 +177,29 @@ class CameraWindow(tk.Toplevel):
         # (Can be either free-running or GPIO triggered.)
         # Hopefully the GPIO triggered slows this loop down
         if not (self.cam is None):
-            #if self.update_camera: # While sweeping don't update
-            self.cam.get_image(self.img)
-            valid_image=True
-
-            self.data = self.img.get_image_data_numpy()
-            self.im = Image.fromarray(self.data)
+            try:
+                self.cam.get_image(self.img, timeout=10)
+                valid_image=True
+                
+                self.data = self.img.get_image_data_numpy()
+                self.im = Image.fromarray(self.data)
+    
+                self.nTimeouts=0
+            except xiapi.Xi_error as err:
+                if err.status == 10:
+                    print('Timeout' + str(self.nTimeouts) )
+                    self.nTimeouts += 1
+                else:
+                    print(err.status)
+                    
+                colors = np.random.randint(0,255,(dim,dim),dtype='uint8' )
+                self.im = Image.fromarray(colors)
+                pi = tk.PhotoImage(self.im)
+                pi2=ImageTk.PhotoImage(image=self.im)            
 
             w = self.winfo_width() 
             if w<100: w=100 # Very first time w is tiny, causing error.. Workaround
-            im_resized = self.im.resize((int(w*0.75),int(w*0.75)), Image.ANTIALIAS)
+            im_resized = self.im.resize((int(w*0.75),int(w*0.75/ASPECT_RATIO)), Image.ANTIALIAS)
 
             pi2=ImageTk.PhotoImage(im_resized) #,mode='L')
         else:
@@ -192,7 +218,10 @@ class CameraWindow(tk.Toplevel):
         self.l.image = pi2
 
         #print (self.geometry() );
-        self.after(UPDATE_RATE_MS, self.updater)
+        if self. sweeping:
+            self.after( int(3000/7.0), self.updater)
+        else:
+            self.after(self.settings['camera_update_rate_ms'], self.updater)
 
     def stop(self):
         if not( self.cam is None): 
