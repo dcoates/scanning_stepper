@@ -12,4 +12,5 @@
     <camera1_exposure>63095.7344480193</camera1_exposure>
     <camera1_gain>0</camera1_gain>
     <camera1_exposure_log>1</camera1_exposure_log>
+    <camera_sweep_snap_rate_ms>267</camera_sweep_snap_rate_ms>
 </settings>
