@@ -219,7 +219,7 @@ class CameraWindow(tk.Toplevel):
 
         #print (self.geometry() );
         if self. sweeping:
-            self.after( int(3000/7.0), self.updater)
+            self.after( int(self.settings['camera_sweep_snap_rate_ms']), self.updater)
         else:
             self.after(self.settings['camera_update_rate_ms'], self.updater)
 
