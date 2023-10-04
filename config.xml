@@ -4,12 +4,12 @@
     <baudrate>115200</baudrate>
     <camera_preview>1</camera_preview>
     <camera_update_rate_ms>100</camera_update_rate_ms>
-    <camera0_gain>0</camera0_gain>
-    <camera1_geometry>986x803+973+168</camera1_geometry>
-    <camera0_geometry>1037x861+1062+0</camera0_geometry>
-    <camera0_exposure>4466.835921509631</camera0_exposure>
+    <camera0_gain>18</camera0_gain>
+    <camera1_geometry>986x718+1442+487</camera1_geometry>
+    <camera0_geometry>891x731+103+341</camera0_geometry>
+    <camera0_exposure>7943.282347242814</camera0_exposure>
     <camera0_exposure_log>1</camera0_exposure_log>
     <camera1_exposure>63095.7344480193</camera1_exposure>
-    <camera1_gain>0</camera1_gain>
+    <camera1_gain>1</camera1_gain>
     <camera1_exposure_log>1</camera1_exposure_log>
 </settings>
