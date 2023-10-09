@@ -32,24 +32,24 @@
 #define STEPPER1_START (-32.5+10) 
 #define STEPPER2_START -900
 #define STEPPER3_START 95
-#define STEPPER4_START -20
+#define STEPPER4_START -30
 
 // Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (32.5+10)
 #define STEPPER2_END 0
 #define STEPPER3_END -95
-#define STEPPER4_END 20
+#define STEPPER4_END 30
 
 // Start some number of steps in the table
 #define TABLE_START1 250
 
 // -30 to +30 : 30.36mm
 
-#define SWEEP_TIME_SEC_H 4.0
+#define SWEEP_TIME_SEC_H 3.0
 #define SWEEP_TIME_SEC_V 3.0
 
-#define CAMERA_SNAP_INTERVAL_HORIZONTAL (4000000/15) //3s/7 for GY data
-#define CAMERA_SNAP_INTERVAL_VERTICAL (3000000/9) //diagonal scan uses snap interval from vertical scan. accurate up to 10-20 ms (?)
+#define CAMERA_SNAP_INTERVAL_HORIZONTAL (4000000/49) //3s/7 for GY data
+#define CAMERA_SNAP_INTERVAL_VERTICAL (3000000/26) //diagonal scan uses snap interval from vertical scan. accurate up to 10-20 ms (?) //rounds up wrt num of frames
 
 #define BUTTON_HOLD_MS 1500
 #define LIMS_DEBOUNCE_PERIOD_US 10000 // Debounce limit switch over a 2000us (2ms). It must remain stable/constant for this long
