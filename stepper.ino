@@ -22,9 +22,9 @@
 // limit2: Comes from the horizontal motor bundle: (old motor #1)
 // limit3: Comes from the motor #2 bundle
 // limit4: No limit switch for motor 4 (horizontal) yet
-// Camera is the pair wired into the #3 bundle
+// Camera is the pair wired into the #3 bundgle
 
-// Zero/middle point for Stepper1 is at 1300 steps away from "0" (due to non-linear scissors)
+// Zero/middle point for Stepper1 is at 1000 steps away from "0"/middle (due to non-linear scissors)
 // Zero/middle point for Stepper2?
 // Zero/middle point for Stepper3 is zero
 
@@ -66,7 +66,7 @@
 #define STEP_BACK2 4450 // 850 //450
 #define STEP_BACK3 NUDGE_LARGE3
 
-#define REAL_SYSTEM 1 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
+#define REAL_SYSTEM 0 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
 
 // These are shared between legacy.ino and this file
 // So that we can peek at the buttons
@@ -297,12 +297,13 @@ void process_serial_commands() {
         else if (incomingByte=='x') {smooth_stop();}
 
 		// accumulate string
-		else if (incomingByte=='-') { str_move_amount += (char)incomingByte; }
-		else if (incomingByte>='0' && incomingByte<='9') { str_move_amount += (char)incomingByte; }
+        //else if (incomingByte=='-') { str_move_amount += (char)incomingByte; }
+        else if ( (incomingByte>='0' && incomingByte<='9') || incomingByte=='-' || incomingByte=='.')
+          { str_move_amount += (char)incomingByte; } // append to end of string
 
 		// Use the accumulated number:
         else if (incomingByte=='A') {move1(stepper1);}
-        else if (incomingByte=='B') {move1(stepper2);}
+        else if (incomingByte=='B') {sweepx(stepper1);}
         else if (incomingByte=='C') {move1(stepper3);}
         else if (incomingByte=='D') {move1(stepper4);}
     }
@@ -405,14 +406,34 @@ void loop() {
 
 void move1(StepperState* which_motor) {
   signed long amt=(signed long)str_move_amount.toInt();
-  which_motor->prepare_move_relative( amt,2.0*1000000.0, 1); //2 second
+  which_motor->prepare_move( amt,2.0*1000000.0, 1); //2 second
   which_motor->start_move();
-  Serial.print("move1 ");
+  Serial.print("move1@");
+  Serial.print(which_motor->num_motor);
+  Serial.print(":");
   Serial.println(amt);
   str_move_amount=""; // Reset for next time
   in_sweep=1;
 }
+void sweepx(StepperState* which_motor) {
+  signed long amt=(signed long)str_move_amount.toFloat();
 
+  Serial.print("sweep1@");
+  Serial.print(which_motor->num_motor);
+  Serial.print(":");
+  Serial.println(amt);
+
+  stepper1->reset_state();
+  stepper1->table_counter=TABLE_START1; // Start partway through the lookup table
+  
+  stepper1->pos_current = stepper1->pos_start;
+
+    sweep_to(
+       (signed long) amt,
+       (signed long) stepper2->pos_current,
+       (signed long) stepper3->pos_current,
+      SWEEP_TIME_SEC_V*1000000.0, 2);
+}
 
 void sweep_to(signed long pos1, signed long pos2, signed long pos3, unsigned long duration, int mode) {
   Serial.print("Sweep ");

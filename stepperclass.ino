@@ -179,8 +179,8 @@ void StepperState::debug_output(unsigned long msg) {
   void StepperState::debug_output(unsigned long msg) {}
 #endif
 
+// Not really used! Continuously checking with as problematic (due to delays, etc.)
 void StepperState::read_limit() {
-
   unsigned long now = micros();
   unsigned char lims_current = digitalRead(pin_limit); // TODO: Specify port
 

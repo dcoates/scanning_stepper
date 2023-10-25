@@ -11,6 +11,8 @@ import os.path
 
 import camera_window
 
+import luts
+
 ### Config/settings
 SETTINGS={}
 
@@ -140,12 +142,20 @@ def ser_command(arg,evnt):
     ser.write(arg)
 
 def movex(arg,evnt):
-    s=('%s%c'%(E_amt.get(),chr(ord('A')+arg) )).encode()
+    amt = int( E_amt.get() )
+    steps = luts.get_pos(amt)
+    s=('%s,%s%c'%(steps,E_dur.get(),chr(ord('A')+arg) )).encode()
+    ser.write(s)
+
+def sweepx(arg,evnt):
+    s=('%s,%s%c'%(E_amt.get(),E_dur.get(),chr(ord('B')+arg) )).encode()
     ser.write(s)
 
 # Create the widget UI
 class App(Frame):
     def __init__(self,parent,SETTINGS):
+        global E_amt, E_dur # TODO
+
         super().__init__()
 
         self.settings=SETTINGS
@@ -178,8 +188,22 @@ class App(Frame):
 
         E_amt = Entry(f,textvariable=-100)
         E_amt.grid(row=6,column=6,padx=5,pady=5)
+        E_dur = Entry(f)
+        E_dur.grid(row=7,column=6,padx=5,pady=5)
+        E_end = Entry(f)
+        E_end.grid(row=8,column=6,padx=5,pady=5)
+        l_amt = ttk.Label(f, text="Pos:", justify="right"); l_amt.grid(row=6, column=5, padx=5, pady=5)
+        l_dur = ttk.Label(f, text="Dur:", justify="right"); l_dur.grid(row=7, column=5, padx=5, pady=5)
+        l_end = ttk.Label(f, text="End:", justify="right"); l_end.grid(row=8, column=5, padx=5, pady=5)
 
-        b_moves=[ttk.Button(f, text='Move %d'%(n+1)) for n in range(4)]
+        b_moves=[ttk.Button(f, text='Move %d'%(n+1)) for n in range(1)]
+        b_sweeps=[ttk.Button(f, text='Sweep %d'%(n+1)) for n in range(1)]
+        for nbutton,b1 in enumerate(b_moves):
+            b1.grid(row=nbutton+6,column=7,padx=5,pady=5)
+            b1.bind('<ButtonPress-1>',partial(movex,nbutton))
+        for nbutton,b1 in enumerate(b_sweeps):
+            b1.grid(row=nbutton+8,column=7,padx=5,pady=5)
+            b1.bind('<ButtonPress-1>',partial(sweepx,nbutton))
 
         # Each one goes: --,-,+,++ . They are in the top letter row of an asdf keyboard. Caps for big.
         codes=[[b'Q',b'q',b'w',b'W'], [b'E',b'e',b'r',b'R'],[b'T',b't',b'y',b'Y'], [b'U',b'u',b'i',b'I'], [b'a',b'b',b'c',b'd'] ]
@@ -207,10 +231,6 @@ class App(Frame):
         for nbutton,b1 in enumerate(b_cals):
             b1.grid(row=nbutton+2,column=5,padx=5,pady=5)
             b1.bind('<ButtonPress-1>',partial(ser_command,codes[4][nbutton]))
-
-        for nbutton,b1 in enumerate(b_moves):
-            b1.grid(row=nbutton+2,column=6,padx=5,pady=5)
-            b1.bind('<ButtonPress-1>',partial(movex,nbutton))
 
         b_cal1 = ttk.Button(f, text="Cal1", command=cal1); b_cal1.grid(row=0, column=0, padx=5, pady=5)
         b_cal2 = ttk.Button(f, text="Cal unlimit", command=cal2,state='enable'); b_cal2.grid(row=0, column=1, padx=5, pady=5)
