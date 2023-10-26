@@ -25,16 +25,15 @@ def get_pos(sweep_beg_frac, sweep_end_frac, desired_duration,is_end=False):
     # nrel position from -1 to 1
     # Need to rescale to make -1 = START and +1 = END (empirical from Chloe)
     start_time = (sweep_beg_frac + 1)/2.0 * desired_times[-1]
-    if sweep_end_frac > 0:
+    if sweep_end_frac > 0: # For now, alwys will be true (Forward only)
         # 0.96 was empirical, to make +1 equal to STEPPER1_END
         end_time = (sweep_end_frac + 1)/2.0 * desired_times[-1] * 0.9574  # * ( (STEPPER1_END-STEPPER1_START)/7000)
         sweep_duration_steps = round( np.interp(end_time, desired_times, xr_steps) )
-        print( sweep_duration_steps)
     table_val = round( np.interp(start_time, desired_times, xr_steps) )
-    print( table_val )
     stepnum = table_val + STEPPER1_START
+    step_end = stepnum + sweep_duration_steps
     table_val += TABLE_START1
     duration = np.sum( intervals[table_val:table_val+sweep_duration_steps])
-    dur_multiply = desired_duration/duration
-    print( desired_duration, duration, dur_multiply )
-    return stepnum,table_val
+    dur_multiply = desired_duration/duration 
+    print ( stepnum,step_end,dur_multiply,table_val )
+    return stepnum,step_end,dur_multiply,table_val

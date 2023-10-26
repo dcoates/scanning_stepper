@@ -142,19 +142,28 @@ def ser_command(arg,evnt):
     ser.write(arg)
 
 def movex(arg,evnt):
-    amt = int( E_amt.get() )
-    steps = luts.get_pos(amt)
-    s=('%s,%s%c'%(steps,E_dur.get(),chr(ord('A')+arg) )).encode()
+    sweep_begin = float( E_start.get() )
+    sweep_end = float( E_end.get() )
+    sweep_dur = float( E_dur.get() )
+    stepnum,step_end,dur_multiply,table_val=luts.get_pos(sweep_begin, sweep_end, sweep_dur)
+    s=('%s%c'%(stepnum,chr(ord('A')+arg) )).encode()
     ser.write(s)
+    print()
 
 def sweepx(arg,evnt):
-    s=('%s,%s%c'%(E_amt.get(),E_dur.get(),chr(ord('B')+arg) )).encode()
+    sweep_begin = float( E_start.get() )
+    sweep_end = float( E_end.get() )
+    sweep_dur = float( E_dur.get() )
+    stepnum,step_end,dur_multiply,table_val=luts.get_pos(sweep_begin, sweep_end, sweep_dur)
+    s=('%d,%d,%d,%0.4f,%d,%c'%(stepnum,step_end,sweep_dur*1e6,dur_multiply,table_val,chr(ord('B')+arg) )).encode()
+    print( s )
     ser.write(s)
+    print()
 
 # Create the widget UI
 class App(Frame):
     def __init__(self,parent,SETTINGS):
-        global E_amt, E_dur # TODO
+        global E_start, E_dur , E_end
 
         super().__init__()
 
@@ -186,13 +195,13 @@ class App(Frame):
 
         b_cals=[ttk.Button(f, text='CAL%d'%(n+1)) for n in range(4)]
 
-        E_amt = Entry(f,textvariable=-100)
-        E_amt.grid(row=6,column=6,padx=5,pady=5)
+        E_start = Entry(f,textvariable=-100)
+        E_start.grid(row=6,column=6,padx=5,pady=5)
         E_dur = Entry(f)
         E_dur.grid(row=7,column=6,padx=5,pady=5)
         E_end = Entry(f)
         E_end.grid(row=8,column=6,padx=5,pady=5)
-        l_amt = ttk.Label(f, text="Pos:", justify="right"); l_amt.grid(row=6, column=5, padx=5, pady=5)
+        l_start = ttk.Label(f, text="Pos:", justify="right"); l_start.grid(row=6, column=5, padx=5, pady=5)
         l_dur = ttk.Label(f, text="Dur:", justify="right"); l_dur.grid(row=7, column=5, padx=5, pady=5)
         l_end = ttk.Label(f, text="End:", justify="right"); l_end.grid(row=8, column=5, padx=5, pady=5)
 

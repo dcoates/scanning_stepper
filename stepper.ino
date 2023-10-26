@@ -297,8 +297,7 @@ void process_serial_commands() {
         else if (incomingByte=='x') {smooth_stop();}
 
 		// accumulate string
-        //else if (incomingByte=='-') { str_move_amount += (char)incomingByte; }
-        else if ( (incomingByte>='0' && incomingByte<='9') || incomingByte=='-' || incomingByte=='.')
+        else if ( (incomingByte>='0' && incomingByte<='9') || incomingByte=='-' || incomingByte=='.' || incomingByte==',')
           { str_move_amount += (char)incomingByte; } // append to end of string
 
 		// Use the accumulated number:
@@ -405,34 +404,51 @@ void loop() {
 }
 
 void move1(StepperState* which_motor) {
-  signed long amt=(signed long)str_move_amount.toInt();
-  which_motor->prepare_move( amt,2.0*1000000.0, 1); //2 second
+  signed long pos=(signed long)str_move_amount.toInt();
+  which_motor->prepare_move( pos,2.0*1000000.0, 1); //2 second
   which_motor->start_move();
   Serial.print("move1@");
   Serial.print(which_motor->num_motor);
   Serial.print(":");
-  Serial.println(amt);
+  Serial.println(pos);
   str_move_amount=""; // Reset for next time
   in_sweep=1;
 }
 void sweepx(StepperState* which_motor) {
-  signed long amt=(signed long)str_move_amount.toFloat();
+  String param=strtok(str_move_amount.c_str(),",");
+  signed long pos_start=(signed long)param.toInt();
+  param=strtok(NULL,",");
+  signed long pos_end=(signed long)param.toInt();
+  param=strtok(NULL,",");
+  signed long duration_usec=(signed long)param.toInt();
+  param=strtok(NULL,",");
+  double dur_mult=param.toFloat();
+  param=strtok(NULL,",");
+  signed long table_offset=(signed long)param.toInt();
 
   Serial.print("sweep1@");
   Serial.print(which_motor->num_motor);
   Serial.print(":");
-  Serial.println(amt);
+  Serial.print(pos_start);
+  Serial.print(",");
+  Serial.print(pos_end);
+  Serial.print(",");
+  Serial.print(duration_usec);
+  Serial.print(",");
+  Serial.print(dur_mult,4);
+  Serial.print(",");
+  Serial.println(table_offset);
 
   stepper1->reset_state();
-  stepper1->table_counter=TABLE_START1; // Start partway through the lookup table
-  
-  stepper1->pos_current = stepper1->pos_start;
+  stepper1->table_counter=table_offset; // Start partway through the lookup table
+  stepper1->pos_current = pos_start;
+  stepper1->dur_mult = dur_mult;
 
-    sweep_to(
-       (signed long) amt,
+  sweep_to(
+       (signed long) pos_end,
        (signed long) stepper2->pos_current,
        (signed long) stepper3->pos_current,
-      SWEEP_TIME_SEC_V*1000000.0, 2);
+      duration_usec, 2);
 }
 
 void sweep_to(signed long pos1, signed long pos2, signed long pos3, unsigned long duration, int mode) {
