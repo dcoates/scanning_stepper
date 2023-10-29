@@ -2,3 +2,5 @@
 __pycache__
 results/*
 config.xml
+
+#git update-index --assume-unchanged config.xml
