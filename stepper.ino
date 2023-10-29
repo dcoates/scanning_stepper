@@ -32,13 +32,13 @@
 #define STEPPER1_START (-32.5+10) 
 #define STEPPER2_START -900
 #define STEPPER3_START 95
-#define STEPPER4_START -30
+#define STEPPER4_START -35
 
 // Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (32.5+10)
 #define STEPPER2_END 0
 #define STEPPER3_END -95
-#define STEPPER4_END 30
+#define STEPPER4_END 35
 
 // Start some number of steps in the table
 #define TABLE_START1 250
