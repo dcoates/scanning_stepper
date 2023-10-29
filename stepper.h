@@ -61,6 +61,9 @@ public:
 
   int num_motor;
 
+protected:
+  signed int mydir; // -1 or +1
+
 private:
 
   // All durations in usec
@@ -76,7 +79,6 @@ private:
   int pin_limit;
 
   signed long mypos_end;
-  signed int mydir; // -1 or +1
 };
 
 class StepperLUT8 : public StepperState // 8 bit
