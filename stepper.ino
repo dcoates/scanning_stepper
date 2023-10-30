@@ -301,10 +301,10 @@ void process_serial_commands() {
           { str_move_amount += (char)incomingByte; } // append to end of string
 
 		// Use the accumulated number:
-        else if (incomingByte=='A') {move1(stepper1);}
+        else if (incomingByte=='A') {movex(stepper1);}
         else if (incomingByte=='B') {sweepx(stepper1);}
-        else if (incomingByte=='C') {move1(stepper3);}
-        else if (incomingByte=='D') {move1(stepper4);}
+        else if (incomingByte=='C') {movex(stepper3);}
+        else if (incomingByte=='D') {movex(stepper4);}
     }
 }
 
@@ -403,11 +403,11 @@ void loop() {
   };
 }
 
-void move1(StepperState* which_motor) {
+void movex(StepperState* which_motor) {
   signed long pos=(signed long)str_move_amount.toInt();
   which_motor->prepare_move( pos,2.0*1000000.0, 1); //2 second
   which_motor->start_move();
-  Serial.print("move1@");
+  Serial.print("moveX@");
   Serial.print(which_motor->num_motor);
   Serial.print(":");
   Serial.println(pos);
@@ -426,7 +426,7 @@ void sweepx(StepperState* which_motor) {
   param=strtok(NULL,",");
   signed long table_offset=(signed long)param.toInt();
 
-  Serial.print("sweep1@");
+  Serial.print("sweepX@");
   Serial.print(which_motor->num_motor);
   Serial.print(":");
   Serial.print(pos_start);

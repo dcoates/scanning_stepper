@@ -18,6 +18,8 @@ StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir, int pin_li
 
   mypin_pulse = pin_pulse;
   mypin_dir = pin_dir;
+  mydir=1; // direction movement (pos+ now table) goes. Default "forward." Prepare_move will change
+
   this->pin_limit = pin_limit;
   this->dur_mult = 1.0;
   
@@ -335,7 +337,12 @@ unsigned int StepperLUT8::get_next_interval() {
 	unsigned long table_interval=pgm_read_byte_near(table_ptr + table_counter); // make ulong for precision in multiply below. Else overflow
     table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
     table_interval *= dur_mult;
-    table_counter++;
+
+    if (mydir==-1 && table_counter==0) {
+      stop_move(1); // shouldn't happen
+    } else {
+      table_counter += mydir; // could be negative
+    }
 
     if (table_counter > 6998) // TODO: get real length of table
       table_counter=0; // Neurotic check to not go past len of table 
@@ -349,7 +356,12 @@ unsigned int StepperLUT16::get_next_interval() {
   unsigned long table_interval=pgm_read_word_near(table_ptr + 2*table_counter); // It's an 8bit pointer, so need to double 
     table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
     table_interval *= dur_mult;
-    table_counter++;
+
+    if (mydir==-1 && table_counter==0) {
+      stop_move(1); // shouldn't happen
+    } else {
+      table_counter += mydir; // could be negative
+    }
 
     if (table_counter > 6998) // TODO: get real length of table
       table_counter=0; // Neurotic check to not go past len of table 
