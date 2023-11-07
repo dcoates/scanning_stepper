@@ -24,9 +24,18 @@ STEPPER1_START= (-32.5+10) * 100
 STEPPER1_END  = ( 32.5+10) * 100
 TABLE_OFFSET1  = 250 # Empirical from Chloe (stepping back off limit switch?)
 
+STEPPER2_START=-900
+STEPPER3_START=95
+STEPPER4_START=-30
+STEPPER2_END=0
+STEPPER3_END=-95
+STEPPER4_END=30
+
 table_val=0
 duration = 0
 dur_multiply=1.0
+
+MAX_DEGREES=20.0
 
 MAX_TIME=3.27 # Empirical, from Chloe's titration to yield a symmetric scan
 def get_pos(sweep_beg_frac, sweep_end_frac, desired_duration,is_end=False):
@@ -66,3 +75,31 @@ def get_pos(sweep_beg_frac, sweep_end_frac, desired_duration,is_end=False):
     sweep_duration_steps=0
 
     return start_location,end_location,dur_multiply,start_index
+
+
+#----------------------------------------
+# INOUT Table (coronal)
+#----------------------------------------
+
+# Time (seconds)
+t_max=1.5            # time (seconds) to get from min to max position
+angle_start_deg=20   # -angle to start (will go to zero and back)
+coronal_steps=900         # Number of stepper motor steps to traverse #800
+
+t=np.linspace(0,t_max,1000) 
+desired_pos2=np.cos( t/t_max*np.radians(angle_start_deg))
+steps2=np.linspace(1,np.cos(np.radians(angle_start_deg)),num_steps-1)
+t_desired2 = np.arccos(steps2) * t_max / np.radians(angle_start_deg)
+
+def coronal_pos(degrees):
+    frac=degrees/MAX_DEGREES
+    t0=t_max*abs(frac)
+    pos=int( desired_pos2.shape[0] * (frac-1e-15) )
+    steps_needed = int(  round(coronal_steps*(desired_pos2[0]-desired_pos2[pos] ) /
+                   (desired_pos2[0]-desired_pos2[-1])) )
+    return steps_needed
+
+def rot_pos(degrees):
+    frac=degrees/MAX_DEGREES
+    steps=int(round(STEPPER3_START*frac ))
+    return steps
