@@ -143,10 +143,19 @@ def ser_command(arg,evnt):
 
 def movex(arg,evnt):
     sweep_begin = float( E_start.get() )
-    sweep_end = float( E_end.get() )
     sweep_dur = float( E_dur.get() )
-    stepnum,step_end,dur_multiply,table_val=luts.get_pos(sweep_begin, sweep_end, sweep_dur)
-    s=('%s%c'%(stepnum,chr(ord('A')+arg) )).encode()
+    sweep_end = float( E_end.get() )
+
+    begin_frac = sweep_begin/luts.MAX_DEGREES
+    end_frac = sweep_end/luts.MAX_DEGREES
+
+    stepnum,step_end,dur_multiply,table_val=luts.get_pos(begin_frac, end_frac, sweep_dur)
+    coronal_pos=-luts.coronal_pos( abs(sweep_begin)  )
+    rot_pos=-luts.rot_pos( sweep_begin  )
+
+    print( begin_frac, coronal_pos, rot_pos )
+
+    s=('%d,%d,%d,%c'%(stepnum,coronal_pos,rot_pos,chr(ord('A')+arg) )).encode()
     ser.write(s)
     print()
 
@@ -154,8 +163,15 @@ def sweepx(arg,evnt):
     sweep_begin = float( E_start.get() )
     sweep_end = float( E_end.get() )
     sweep_dur = float( E_dur.get() )
-    stepnum,step_end,dur_multiply,table_val=luts.get_pos(sweep_begin, sweep_end, sweep_dur)
-    s=('%d,%d,%d,%0.4f,%d,%c'%(stepnum,step_end,sweep_dur*1e6,dur_multiply,table_val,chr(ord('B')+arg) )).encode()
+
+    begin_frac = sweep_begin/luts.MAX_DEGREES
+    end_frac = sweep_end/luts.MAX_DEGREES
+
+    stepnum,step_end,dur_multiply,table_val=luts.get_pos(begin_frac, end_frac, sweep_dur)
+    coronal_pos=-luts.coronal_pos( abs(sweep_begin)  )
+    rot_pos=-luts.rot_pos( sweep_begin  )
+
+    s=('%d,%d,%d,%0.4f,%d,%d,%d,%c'%(stepnum,step_end,sweep_dur*1e6,dur_multiply,table_val,coronal_pos,rot_pos,chr(ord('B')+arg) )).encode()
     print( s )
     ser.write(s)
     print()

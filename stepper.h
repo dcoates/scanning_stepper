@@ -40,8 +40,11 @@ public:
   word table_counter;		// Public for debugging, LUT
 
   int mode;
+
+  // Positions:
   signed int pos_current;
   signed int pos_start; // Pos at the sweep start (or, just off the limit switch)
+  // Also used in the coronal motor to know where to go back to after zero. Changes in sweep
 
   //Limit switches:
   unsigned char limit_hit=0; 

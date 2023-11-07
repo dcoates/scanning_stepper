@@ -18,7 +18,7 @@ StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir, int pin_li
 
   mypin_pulse = pin_pulse;
   mypin_dir = pin_dir;
-  mydir=1; // direction movement (pos+ now table) goes. Default "forward." Prepare_move will change
+  mydir=1; // direction movement (pos+ now table) goes. Default "forward." prepare_move will change
 
   this->pin_limit = pin_limit;
   this->dur_mult = 1.0;
@@ -313,10 +313,13 @@ void StepperState::do_update() {
 
       // If motor 2, that reverse once:
       // Mode==0 is normal moves, so we don't want to do the reversal in that case
+      // Comparison to zero is probably better than STEPPER2_END
       if ( (num_motor==2) && (pos_current==(signed int)STEPPER2_END) && (mode!=0) ) {
           set_table_info(2); // Reverse direction from different lut
           table_counter=0;   // Reset the position pointer, to the beginning of the reversed LUT
-          prepare_move( (signed long) STEPPER2_START, 0L, MODE_REVERSING); // This will reverse dir also and reset mypos_end, etc. //Reversing=mode 3
+          // This should be okay even when reversing.
+
+          prepare_move( (signed long) this->pos_start, 0L, MODE_REVERSING); // This will reverse dir also and reset mypos_end, etc. //Reversing=mode 3
           start_move();  
       } else {
         // done, at destination
