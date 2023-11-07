@@ -21,7 +21,7 @@ def read_config(fname='./config.xml'):
     tree=ET.parse(fname)
 
     for child in tree.getroot(): # Assume root is "settings"
-        print( child.tag, child.text )
+        #print( child.tag, child.text )
         settings[child.tag]=child.text
     return settings
 
@@ -39,7 +39,7 @@ def add_coms(lb):
     lports = comports()
     list_ports=[]
     for nport,port1 in enumerate(lports):
-        print( lb['values'] )
+        #print( lb['values'] )
         #lb.insert(nport+1,port1.device) # For a listbox
         list_ports += [port1.device]
     lb['values']=list_ports
@@ -49,23 +49,26 @@ def check_serial():
 
     lin=ser.readline()
     if len(lin)>0:
+        lin=lin.decode() #lin=lin.replace('\r\n','\n')
         print('Ser:', lin, end='', flush=True)
 
-        if b'ready' in lin:
+        if 'ready' in lin:
             theApp.l_status.configure(text='READY', foreground='green' )
-        elif b'pos1' in lin:
+        elif 'pos1' in lin:
             theApp.l_p1.configure(text=lin[0:])
-        elif b'pos2' in lin:
+        elif 'pos2' in lin:
             theApp.l_p2.configure(text=lin[0:])
-        elif b'pos3' in lin:
+        elif 'pos3' in lin:
             theApp.l_p3.configure(text=lin[0:])
-        elif b'pos4' in lin:
+        elif 'pos4' in lin:
             theApp.l_p4.configure(text=lin[0:])
 
     theApp.after(10, lambda: check_serial()) # Poll often (10ms)
 
 def getpos():
     ser.write(b'p');
+def getdbg():
+    ser.write(b'?');
 
 # TODO: All the single-letter commands could call a single function (doing ser.write), with a dictionary of
 # human-readable mapping from command to letter code.
@@ -153,11 +156,11 @@ def movex(arg,evnt):
     coronal_pos=-luts.coronal_pos( abs(sweep_begin)  )
     rot_pos=-luts.rot_pos( sweep_begin  )
 
-    print( begin_frac, coronal_pos, rot_pos )
+    #print( begin_frac, coronal_pos, rot_pos )
 
     s=('%d,%d,%d,%c'%(stepnum,coronal_pos,rot_pos,chr(ord('A')+arg) )).encode()
     ser.write(s)
-    print()
+    #print()
 
 def sweepx(arg,evnt):
     sweep_begin = float( E_start.get() )
@@ -199,6 +202,7 @@ class App(Frame):
         self.b_connect.grid(row=1,column=7, padx=5, pady=5)
 
         b_pos = ttk.Button(f, text="Get pos", command=getpos).grid(row=1, column=2, padx=5, pady=5)
+        b_pos = ttk.Button(f, text="DEBUG", command=getdbg).grid(row=1, column=3, padx=5, pady=5)
         self.l_p1 = ttk.Label(f, text="Pos1:"); self.l_p1.grid(row=2, column=2, padx=5, pady=5)
         self.l_p2 = ttk.Label(f, text="Pos2:"); self.l_p2.grid(row=3, column=2, padx=5, pady=5)
         self.l_p3 = ttk.Label(f, text="Pos3:"); self.l_p3.grid(row=4, column=2, padx=5, pady=5)

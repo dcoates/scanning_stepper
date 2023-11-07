@@ -42,8 +42,8 @@ public:
   int mode;
 
   // Positions:
-  signed int pos_current;
-  signed int pos_start; // Pos at the sweep start (or, just off the limit switch)
+  signed long pos_current;
+  signed long pos_start; // Pos at the sweep start (or, just off the limit switch)
   // Also used in the coronal motor to know where to go back to after zero. Changes in sweep
 
   //Limit switches:

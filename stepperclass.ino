@@ -102,6 +102,8 @@ void StepperState::prepare_move(signed long pos_end, unsigned long move_duration
   Serial.print(" ");
   Serial.print(mypos_end);
   Serial.print(" ");
+  Serial.print(this->step_interval_us);
+  Serial.print(" ");
   Serial.print(interval_next);
   Serial.println(" ");
 #endif
@@ -341,11 +343,12 @@ unsigned int StepperLUT8::get_next_interval() {
     table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
     table_interval *= dur_mult;
 
-    if (mydir==-1 && table_counter==0) {
-      stop_move(1); // shouldn't happen
-    } else {
-      table_counter += mydir; // could be negative
-    }
+    //if (mydir==-1 && table_counter==0) {
+    //stop_move(1); // shouldn't happen
+    //Serial.println("X");
+    //} else {
+      table_counter -= mydir; // could be negative
+      //}
 
     if (table_counter > 6998) // TODO: get real length of table
       table_counter=0; // Neurotic check to not go past len of table 
@@ -360,11 +363,12 @@ unsigned int StepperLUT16::get_next_interval() {
     table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
     table_interval *= dur_mult;
 
-    if (mydir==-1 && table_counter==0) {
-      stop_move(1); // shouldn't happen
-    } else {
-      table_counter += mydir; // could be negative
-    }
+    //if (mydir==-1 && table_counter==0) {
+    //stop_move(1); // shouldn't happen
+    //Serial.println("X");
+    //} else {
+      table_counter -= mydir; // could be negative
+      //}
 
     if (table_counter > 6998) // TODO: get real length of table
       table_counter=0; // Neurotic check to not go past len of table 
