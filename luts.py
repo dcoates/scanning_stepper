@@ -92,14 +92,14 @@ steps2=np.linspace(1,np.cos(np.radians(angle_start_deg)),coronal_steps-1)
 t_desired2 = np.arccos(steps2) * t_max / np.radians(angle_start_deg)
 t_delays2 = np.diff(-t_desired2[::-1])
 
-def coronal_pos(degrees):
+def coronal_pos(degrees,duration):
     frac=degrees/MAX_DEGREES
     t0=t_max*abs(frac)
     pos=int( desired_pos2.shape[0] * (frac-1e-15) )
     steps_needed = int(  np.round(coronal_steps*(desired_pos2[0]-desired_pos2[pos] ) /
                    (desired_pos2[0]-desired_pos2[-1])) )
     #print( pos, steps_needed, coronal_steps-steps_needed)
-    tfrac=t_max/np.sum(t_delays2[coronal_steps-steps_needed:])
+    tfrac=(duration/2.0)/np.sum(t_delays2[coronal_steps-steps_needed:])
 
     return steps_needed,tfrac
 
