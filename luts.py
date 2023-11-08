@@ -88,16 +88,20 @@ coronal_steps=900         # Number of stepper motor steps to traverse #800
 
 t=np.linspace(0,t_max,1000) 
 desired_pos2=np.cos( t/t_max*np.radians(angle_start_deg))
-steps2=np.linspace(1,np.cos(np.radians(angle_start_deg)),num_steps-1)
+steps2=np.linspace(1,np.cos(np.radians(angle_start_deg)),coronal_steps-1)
 t_desired2 = np.arccos(steps2) * t_max / np.radians(angle_start_deg)
+t_delays2 = np.diff(-t_desired2[::-1])
 
 def coronal_pos(degrees):
     frac=degrees/MAX_DEGREES
     t0=t_max*abs(frac)
     pos=int( desired_pos2.shape[0] * (frac-1e-15) )
-    steps_needed = int(  round(coronal_steps*(desired_pos2[0]-desired_pos2[pos] ) /
+    steps_needed = int(  np.round(coronal_steps*(desired_pos2[0]-desired_pos2[pos] ) /
                    (desired_pos2[0]-desired_pos2[-1])) )
-    return steps_needed
+    #print( pos, steps_needed, coronal_steps-steps_needed)
+    tfrac=t_max/np.sum(t_delays2[coronal_steps-steps_needed:])
+
+    return steps_needed,tfrac
 
 def rot_pos(degrees):
     frac=degrees/MAX_DEGREES

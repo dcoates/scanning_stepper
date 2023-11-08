@@ -23,7 +23,7 @@ public:
 
   void stop_pulse(); // Immediately set pulse low
   void stop_move(unsigned int lower_pulse);  // Stop and cancel future movements.
-  virtual unsigned int get_next_interval()=0;
+  virtual unsigned long get_next_interval()=0;
 
   void read_limit();
   
@@ -70,7 +70,7 @@ protected:
 private:
 
   // All durations in usec
-  unsigned int interval_next;
+  unsigned long interval_next;
   float error;
 
   unsigned long pulse_on_time;
@@ -88,13 +88,13 @@ class StepperLUT8 : public StepperState // 8 bit
 {
 public:
   StepperLUT8(int num_motor, int pin_go, int pin_dir, int pin_limit, signed long pos_start);
-  unsigned int get_next_interval();
+  unsigned long get_next_interval();
 };
 class StepperLUT16 : public StepperState // 16 bit
 {
 public:
   StepperLUT16(int num_motor, int pin_go, int pin_dir, int pin_limit, signed long pos_start);
-  unsigned int get_next_interval();
+  unsigned long get_next_interval();
 };
 
 // Create derived classes just to override read and write digital Fns
@@ -104,5 +104,5 @@ class StepperConstant : public StepperState
 {
 public:
   StepperConstant(int num_motor, int pin_go, int pin_dir, int pin_limit, signed long pos_start);
-  unsigned int get_next_interval();
+  unsigned long get_next_interval();
 };

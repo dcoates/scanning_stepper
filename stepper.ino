@@ -36,7 +36,7 @@
 
 // Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (32.5+10)
-#define STEPPER2_END 0
+#define STEPPER2_END (-2) // Table/indexing has some off-by-one issues !
 #define STEPPER3_END -95
 #define STEPPER4_END 35
 
@@ -413,10 +413,12 @@ void movex(StepperState* which_motor) {
 
   stepper1->prepare_move( pos1,2.0*1000000.0, 1); //2 second
   stepper1->dur_mult=1.0; // move at normal_speed
+  stepper1->table_counter=0; 
   stepper1->start_move();
 
   stepper2->prepare_move( pos2,2.0*1000000.0, 1); //2 second
   stepper2->dur_mult=1.0; // move at normal_speed
+  stepper2->table_counter=0; 
   stepper2->start_move();
 
   stepper3->prepare_move( pos3,2.0*1000000.0, 1); //2 second
@@ -450,6 +452,8 @@ void sweepx(StepperState* which_motor) {
   param=strtok(NULL,",");
   signed long pos2=(signed long)param.toInt();
   param=strtok(NULL,",");
+  double dur_mult2=param.toFloat();
+  param=strtok(NULL,",");
   signed long pos3=(signed long)param.toInt();
 
   Serial.print("sweepX@");
@@ -467,6 +471,10 @@ void sweepx(StepperState* which_motor) {
   Serial.print(",");
   Serial.print(pos2);
   Serial.print(",");
+  Serial.print(dur_mult2,4);
+  Serial.print(",");
+  Serial.print(stepper3->pos_current);
+  Serial.print(",");
   Serial.println(pos3);
 
   stepper1->reset_state();
@@ -478,14 +486,14 @@ void sweepx(StepperState* which_motor) {
   stepper2->pos_start = pos2;  // Need to save this for when we turn around
   stepper2->pos_current = pos2;
   stepper2->table_counter=-(STEPPER2_START-pos2);  // Index into the table. This one is one-to-one with step position
-  stepper2->dur_mult = dur_mult;
+  stepper2->dur_mult = dur_mult2;
 
   // Stepper 3 (mirror rot): just continue movement started earlier
-  stepper3->dur_mult = dur_mult;
+  //stepper3->dur_mult = dur_mult;
 
   sweep_to(
        (signed long) pos_end,
-       (signed long) 0, // (will turn around and go back to start)
+       (signed long) STEPPER2_END, // (will turn around and go back to start)
        (signed long) -pos3,
       duration_usec, 2);
 }

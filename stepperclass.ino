@@ -29,6 +29,7 @@ StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir, int pin_li
   this->num_motor = num_motor;
 
   this->pos_start = pos_start;
+  this->table_counter=0;
 
   reset_state();
 }
@@ -88,12 +89,14 @@ void StepperState::prepare_move(signed long pos_end, unsigned long move_duration
 
   // TODO: be careful about rounding here!
   if (total_steps>0)
-    this->step_interval_us = (float(move_duration)/total_steps); // Force to be float
+    this->step_interval_us = (float(move_duration)/total_steps);
   else
     this->step_interval_us = 100; // Not sure what to do for 0.
 
 #if DEBUG_STEPPER
-  Serial.print("PREP ");
+  unsigned long now=micros();
+  Serial.print(now);
+  Serial.print(" PREP ");
   Serial.print(num_motor);
   Serial.print(" ");
   Serial.print(move_duration);
@@ -106,6 +109,8 @@ void StepperState::prepare_move(signed long pos_end, unsigned long move_duration
   Serial.print(" ");
   Serial.print(interval_next);
   Serial.println(" ");
+
+  debug_output(4);
 #endif
 };
 
@@ -117,8 +122,14 @@ void StepperState::start_move() {
     high_time = MIN_PULSE_DUR_USEC; // Will set to low after this much time (minimum)
     pulse_on_time = micros(); // arm first movement: NOW!
 
-    interval_next = int( pgm_read_byte_near(table_ptr+0) );
-    //interval_next = int(step_interval_us); // start out with theoretical interval
+#if 0
+    if (num_motor>=3) { // TODO: fix!! linear motors use value as first one
+      interval_next=step_interval_us;
+    } else {
+      interval_next = get_next_interval() :(long) pgm_read_byte_near(table_ptr+table_counter) ;
+    }
+#endif //0
+    interval_next=get_next_interval();
     error=0.0;
     
     sweeping=1;
@@ -151,6 +162,8 @@ void StepperState::stop_move(unsigned int lower_pulse) {
   sweep_end_time=micros();
   debug_output(2);
 
+  Serial.print(sweep_end_time);
+  Serial.print(" ");
   Serial.print(num_motor);
   Serial.println(" stop");
 };
@@ -168,6 +181,11 @@ void StepperState::smooth_stop()
 
 #if DEBUG_STEPPER
 void StepperState::debug_output(unsigned long msg) {
+  unsigned long now=micros();
+    Serial.print(now);  
+    Serial.print(" ");
+    Serial.print(num_motor);  // Before was trying to pass in msg string
+    Serial.print(" ");
     Serial.print(msg);  // Before was trying to pass in msg string
     Serial.print(" ");
     Serial.print(mypin_pulse);
@@ -176,7 +194,9 @@ void StepperState::debug_output(unsigned long msg) {
     Serial.print(" ");
     Serial.print(mypos_end);
     Serial.print(" ");
-    Serial.println(step_interval_us);
+    Serial.print(step_interval_us);
+    Serial.print(" ");
+    Serial.print(interval_next);
     Serial.print(" ");
     Serial.println(table_counter);
 }
@@ -338,7 +358,7 @@ void StepperState::do_update() {
 StepperLUT8::StepperLUT8(int num_motor, int pin_pulse, int pin_dir, int pin_limit, signed long pos_start) : StepperState( num_motor, pin_pulse, pin_dir, pin_limit, pos_start )
 {}
 
-unsigned int StepperLUT8::get_next_interval() {
+unsigned long StepperLUT8::get_next_interval() {
 	unsigned long table_interval=pgm_read_byte_near(table_ptr + table_counter); // make ulong for precision in multiply below. Else overflow
     table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
     table_interval *= dur_mult;
@@ -347,7 +367,7 @@ unsigned int StepperLUT8::get_next_interval() {
     //stop_move(1); // shouldn't happen
     //Serial.println("X");
     //} else {
-      table_counter -= mydir; // could be negative
+      table_counter += mydir; // could be negative
       //}
 
     if (table_counter > 6998) // TODO: get real length of table
@@ -358,16 +378,16 @@ unsigned int StepperLUT8::get_next_interval() {
 StepperLUT16::StepperLUT16(int num_motor, int pin_pulse, int pin_dir, int pin_limit, signed long pos_start) : StepperState( num_motor, pin_pulse, pin_dir, pin_limit, pos_start )
 {}
 
-unsigned int StepperLUT16::get_next_interval() {
-  unsigned long table_interval=pgm_read_word_near(table_ptr + 2*table_counter); // It's an 8bit pointer, so need to double 
-    table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
-    table_interval *= dur_mult;
+unsigned long StepperLUT16::get_next_interval() {
+  unsigned long table_interval=(unsigned long)pgm_read_word_near(table_ptr + 2*table_counter); // It's an 8bit pointer, so need to double 
+  table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
+  table_interval *= dur_mult;
 
     //if (mydir==-1 && table_counter==0) {
     //stop_move(1); // shouldn't happen
     //Serial.println("X");
     //} else {
-      table_counter -= mydir; // could be negative
+    table_counter += 1; // always go forward through table (reversal logic is elsewhere)
       //}
 
     if (table_counter > 6998) // TODO: get real length of table
@@ -378,6 +398,6 @@ unsigned int StepperLUT16::get_next_interval() {
 StepperConstant::StepperConstant(int num_motor, int pin_pulse, int pin_dir, int pin_limit, signed long pos_start) : StepperState( num_motor, pin_pulse, pin_dir, pin_limit, pos_start )
 {}
 
-unsigned int StepperConstant::get_next_interval() {
-	return int(step_interval_us);
+unsigned long StepperConstant::get_next_interval() {
+	return long(step_interval_us);
 }
