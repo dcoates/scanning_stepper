@@ -21,7 +21,7 @@ StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir, int pin_li
   mydir=1; // direction movement (pos+ now table) goes. Default "forward." prepare_move will change
 
   this->pin_limit = pin_limit;
-  this->dur_mult = 1.0;
+  this->dur_extra = 0.0;
   
   pinMode(mypin_pulse,OUTPUT);
   pinMode(mypin_dir,OUTPUT);
@@ -361,7 +361,7 @@ StepperLUT8::StepperLUT8(int num_motor, int pin_pulse, int pin_dir, int pin_limi
 unsigned long StepperLUT8::get_next_interval() {
 	unsigned long table_interval=pgm_read_byte_near(table_ptr + table_counter); // make ulong for precision in multiply below. Else overflow
     table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
-    table_interval *= dur_mult;
+    table_interval += dur_extra;
 
     //if (mydir==-1 && table_counter==0) {
     //stop_move(1); // shouldn't happen
@@ -381,7 +381,7 @@ StepperLUT16::StepperLUT16(int num_motor, int pin_pulse, int pin_dir, int pin_li
 unsigned long StepperLUT16::get_next_interval() {
   unsigned long table_interval=(unsigned long)pgm_read_word_near(table_ptr + 2*table_counter); // It's an 8bit pointer, so need to double 
   table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
-  table_interval *= dur_mult;
+  table_interval *= dur_extra;
 
     //if (mydir==-1 && table_counter==0) {
     //stop_move(1); // shouldn't happen

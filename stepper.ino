@@ -412,17 +412,17 @@ void movex(StepperState* which_motor) {
   signed long pos3=(signed long)param.toInt();
 
   stepper1->prepare_move( pos1,2.0*1000000.0, 1); //2 second
-  stepper1->dur_mult=1.0; // move at normal_speed
+  stepper1->dur_extra=0.0; // move at normal_speed
   stepper1->table_counter=0; 
   stepper1->start_move();
 
   stepper2->prepare_move( pos2,2.0*1000000.0, 1); //2 second
-  stepper2->dur_mult=1.0; // move at normal_speed
+  stepper2->dur_extra=0.0; // move at normal_speed
   stepper2->table_counter=0; 
   stepper2->start_move();
 
   stepper3->prepare_move( pos3,2.0*1000000.0, 1); //2 second
-  stepper3->dur_mult=1.0; // move at normal_speed
+  stepper3->dur_extra=0.0; // move at normal_speed
   stepper3->start_move();
 
   Serial.print("moveX@");
@@ -446,13 +446,13 @@ void sweepx(StepperState* which_motor) {
   param=strtok(NULL,",");
   signed long duration_usec=(signed long)param.toInt();
   param=strtok(NULL,",");
-  double dur_mult=param.toFloat();
+  double dur_extra=param.toFloat();
   param=strtok(NULL,",");
   signed long table_offset=(signed long)param.toInt();
   param=strtok(NULL,",");
   signed long pos2=(signed long)param.toInt();
   param=strtok(NULL,",");
-  double dur_mult2=param.toFloat();
+  double dur_extra2=param.toFloat();
   param=strtok(NULL,",");
   signed long pos3=(signed long)param.toInt();
 
@@ -465,13 +465,13 @@ void sweepx(StepperState* which_motor) {
   Serial.print(",");
   Serial.print(duration_usec);
   Serial.print(",");
-  Serial.print(dur_mult,4);
+  Serial.print(dur_extra,4);
   Serial.print(",");
   Serial.print(table_offset);
   Serial.print(",");
   Serial.print(pos2);
   Serial.print(",");
-  Serial.print(dur_mult2,4);
+  Serial.print(dur_extra2,4);
   Serial.print(",");
   Serial.print(stepper3->pos_current);
   Serial.print(",");
@@ -480,16 +480,15 @@ void sweepx(StepperState* which_motor) {
   stepper1->reset_state();
   stepper1->table_counter=table_offset; // Start partway through the lookup table
   stepper1->pos_current = pos_start;
-  stepper1->dur_mult = dur_mult;
+  stepper1->dur_extra = dur_extra2;
 
   stepper2->reset_state();
   stepper2->pos_start = pos2;  // Need to save this for when we turn around
   stepper2->pos_current = pos2;
   stepper2->table_counter=-(STEPPER2_START-pos2);  // Index into the table. This one is one-to-one with step position
-  stepper2->dur_mult = dur_mult2;
+  stepper2->dur_extra = dur_extra2;
 
-  // Stepper 3 (mirror rot): just continue movement started earlier
-  //stepper3->dur_mult = dur_mult;
+  // Stepper 3 (mirror rot): just continue movement started earlier. Duration will be correct
 
   sweep_to(
        (signed long) pos_end,

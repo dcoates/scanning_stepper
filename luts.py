@@ -65,7 +65,8 @@ def get_pos(sweep_beg_frac, sweep_end_frac, desired_duration,is_end=False):
     end_index = end_steps + TABLE_OFFSET1
 
     duration_estimate = np.sum( intervals[start_index:end_index:direction])
-    dur_multiply = desired_duration/duration_estimate 
+    dur_diff = desired_duration-duration_estimate 
+    extra_per_step = dur_difference/(abs(start_index-end_index))
 
     print( sweep_beg_frac, sweep_end_frac, desired_duration, end='\n')
     #print( "Sweep", sweep_duration_steps, start_index, direction)
@@ -74,7 +75,7 @@ def get_pos(sweep_beg_frac, sweep_end_frac, desired_duration,is_end=False):
     print( "Dur. ", dur_multiply, duration_estimate)
     sweep_duration_steps=0
 
-    return start_location,end_location,dur_multiply,start_index
+    return start_location,end_location,extra_per_step,start_index
 
 
 #----------------------------------------
@@ -99,9 +100,10 @@ def coronal_pos(degrees,duration):
     steps_needed = int(  np.round(coronal_steps*(desired_pos2[0]-desired_pos2[pos] ) /
                    (desired_pos2[0]-desired_pos2[-1])) )
     #print( pos, steps_needed, coronal_steps-steps_needed)
-    tfrac=(duration/2.0)/np.sum(t_delays2[coronal_steps-steps_needed:])
+    difference=duration-np.sum(t_delays2[coronal_steps-steps_needed:])*2
+    extra_per_step = difference/(coronal_steps-steps_needed)
 
-    return steps_needed,tfrac
+    return steps_needed,extra_per_step
 
 def rot_pos(degrees):
     frac=degrees/MAX_DEGREES

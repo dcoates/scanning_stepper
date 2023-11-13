@@ -36,7 +36,7 @@ public:
   unsigned int sweeping;	// Public for global access
   unsigned int steps_completed; // global for debugging
   float step_interval_us; // target value, when constant (not LUT)
-  float dur_mult; // multiplier for each delay in table (to expand short sections to longer times)
+  float dur_extra; // multiplier for each delay in table (to expand short sections to longer times)
   word table_counter;		// Public for debugging, LUT
 
   int mode;
