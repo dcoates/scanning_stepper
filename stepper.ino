@@ -381,7 +381,7 @@ void loop() {
         pos_buffer[pos_curr++] = (signed long)stepper1->pos_current;
         pos_buffer[pos_curr++] = (signed long)stepper2->pos_current;
         pos_buffer[pos_curr++] = (signed long)stepper3->pos_current;
-        pos_buffer[pos_curr++] = (signed long)stepper3->pos_current;
+        pos_buffer[pos_curr++] = (signed long)stepper1->table_counter;
         if (pos_curr >= POS_BUF_SIZE)
           pos_curr = 0; // Paranoid buffer size checking
           
@@ -480,7 +480,7 @@ void sweepx(StepperState* which_motor) {
   stepper1->reset_state();
   stepper1->table_counter=table_offset; // Start partway through the lookup table
   stepper1->pos_current = pos_start;
-  stepper1->dur_extra = dur_extra2;
+  stepper1->dur_extra = dur_extra;
 
   stepper2->reset_state();
   stepper2->pos_start = pos2;  // Need to save this for when we turn around

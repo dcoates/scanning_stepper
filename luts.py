@@ -66,14 +66,14 @@ def get_pos(sweep_beg_frac, sweep_end_frac, desired_duration,is_end=False):
 
     duration_estimate = np.sum( intervals[start_index:end_index:direction])
     dur_diff = desired_duration-duration_estimate 
-    extra_per_step = dur_difference/(abs(start_index-end_index))
+    extra_per_step = dur_diff/(abs(start_index-end_index)-1) * 1e6
 
-    print( sweep_beg_frac, sweep_end_frac, desired_duration, end='\n')
+    print( sweep_beg_frac, sweep_end_frac, desired_duration, extra_per_step, end='\n')
     #print( "Sweep", sweep_duration_steps, start_index, direction)
     print( "Start", start_location, start_steps, start_time, start_index)
     print( "End  ", end_location, end_steps, end_time, end_index)
-    print( "Dur. ", dur_multiply, duration_estimate)
-    sweep_duration_steps=0
+    print( "Dur. ", extra_per_step, duration_estimate, dur_diff)
+    #sweep_duration_steps=0
 
     return start_location,end_location,extra_per_step,start_index
 
@@ -99,9 +99,13 @@ def coronal_pos(degrees,duration):
     pos=int( desired_pos2.shape[0] * (frac-1e-15) )
     steps_needed = int(  np.round(coronal_steps*(desired_pos2[0]-desired_pos2[pos] ) /
                    (desired_pos2[0]-desired_pos2[-1])) )
-    #print( pos, steps_needed, coronal_steps-steps_needed)
+    
+    # This duration is for total time (double because this table contains only
+    # half: going from in to out)
     difference=duration-np.sum(t_delays2[coronal_steps-steps_needed:])*2
-    extra_per_step = difference/(coronal_steps-steps_needed)
+    # Divide difference by two to get back the half steps the table uses
+    extra_per_step = difference/2.0/(steps_needed)*1e6
+    print( pos, extra_per_step, difference, steps_needed, coronal_steps-steps_needed)
 
     return steps_needed,extra_per_step
 

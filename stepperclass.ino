@@ -196,6 +196,8 @@ void StepperState::debug_output(unsigned long msg) {
     Serial.print(" ");
     Serial.print(step_interval_us);
     Serial.print(" ");
+    Serial.print(dur_extra);
+    Serial.print(" ");
     Serial.print(interval_next);
     Serial.print(" ");
     Serial.println(table_counter);
@@ -381,7 +383,7 @@ StepperLUT16::StepperLUT16(int num_motor, int pin_pulse, int pin_dir, int pin_li
 unsigned long StepperLUT16::get_next_interval() {
   unsigned long table_interval=(unsigned long)pgm_read_word_near(table_ptr + 2*table_counter); // It's an 8bit pointer, so need to double 
   table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
-  table_interval *= dur_extra;
+  table_interval += dur_extra;
 
     //if (mydir==-1 && table_counter==0) {
     //stop_move(1); // shouldn't happen
