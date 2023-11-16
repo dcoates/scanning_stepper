@@ -13,6 +13,8 @@ import camera_window
 
 import luts
 
+HORIZ_SENTINEL=9999
+
 ### Config/settings
 SETTINGS={}
 
@@ -149,6 +151,9 @@ def movex(arg,evnt):
     sweep_dur = float( E_dur.get() )
     sweep_end = float( E_end.get() )
 
+    horiz_sweep_begin = int( E_start_horiz.get() )
+    horiz_sweep_end = int( E_end_horiz.get() )
+
     begin_frac = sweep_begin/luts.MAX_DEGREES
     end_frac = sweep_end/luts.MAX_DEGREES
 
@@ -158,7 +163,7 @@ def movex(arg,evnt):
 
     #print( begin_frac, coronal_pos, rot_pos )
 
-    s=('%d,%d,%d,%c'%(stepnum,-coronal_pos,rot_pos,chr(ord('A')+arg) )).encode()
+    s=('%d,%d,%d,%d,%c'%(stepnum,-coronal_pos,rot_pos,horiz_sweep_begin,chr(ord('A')+arg) )).encode()
     ser.write(s)
     #print()
 
@@ -167,6 +172,9 @@ def sweepx(arg,evnt):
     sweep_end = float( E_end.get() )
     sweep_dur = float( E_dur.get() )
 
+    horiz_sweep_begin = int( E_start_horiz.get() )
+    horiz_sweep_end = int( E_end_horiz.get() )
+    
     begin_frac = sweep_begin/luts.MAX_DEGREES
     end_frac = sweep_end/luts.MAX_DEGREES
 
@@ -174,7 +182,8 @@ def sweepx(arg,evnt):
     coronal_pos,coronal_extra=luts.coronal_pos( abs(sweep_begin), sweep_dur  )
     rot_pos=-luts.rot_pos( sweep_begin  )
 
-    s=('%d,%d,%d,%0.4f,%d,%d,%0.4f,%d,%c'%(stepnum,step_end,sweep_dur*1e6,extra_per_step,table_val,-coronal_pos,coronal_extra,rot_pos,chr(ord('B')+arg) )).encode()
+    s=('%d,%d,%d,%0.4f,%d,%d,%0.4f,%d,%d,%d,%c'%(stepnum,step_end,sweep_dur*1e6,extra_per_step,table_val,
+    -coronal_pos,coronal_extra,rot_pos,horiz_sweep_begin,horiz_sweep_end,chr(ord('B')+arg) )).encode()
     print( s )
     ser.write(s)
     print()
@@ -183,6 +192,7 @@ def sweepx(arg,evnt):
 class App(Frame):
     def __init__(self,parent,SETTINGS):
         global E_start, E_dur , E_end
+        global E_start_horiz, E_end_horiz
 
         super().__init__()
 
@@ -215,15 +225,25 @@ class App(Frame):
 
         b_cals=[ttk.Button(f, text='CAL%d'%(n+1)) for n in range(4)]
 
-        E_start = Entry(f,textvariable=-100)
-        E_start.grid(row=6,column=6,padx=5,pady=5)
+        E_start = Entry(f)
+        E_start.grid(row=6,column=5,padx=5,pady=5)
         E_dur = Entry(f)
-        E_dur.grid(row=7,column=6,padx=5,pady=5)
+        E_dur.grid(row=7,column=5,padx=5,pady=5)
         E_end = Entry(f)
-        E_end.grid(row=8,column=6,padx=5,pady=5)
-        l_start = ttk.Label(f, text="Pos:", justify="right"); l_start.grid(row=6, column=5, padx=5, pady=5)
-        l_dur = ttk.Label(f, text="Dur:", justify="right"); l_dur.grid(row=7, column=5, padx=5, pady=5)
-        l_end = ttk.Label(f, text="End:", justify="right"); l_end.grid(row=8, column=5, padx=5, pady=5)
+        E_end.grid(row=8,column=5,padx=5,pady=5)
+        
+        E_start.insert(0,"-20");  #default
+        E_end.insert(0,"20");  #default
+        E_dur.insert(0,"3");  #default
+
+        l_start = ttk.Label(f, text="Pos:", justify="right"); l_start.grid(row=6, column=4, padx=5, pady=5)
+        l_dur = ttk.Label(f, text="Dur:", justify="right"); l_dur.grid(row=7, column=4, padx=5, pady=5)
+        l_end = ttk.Label(f, text="End:", justify="right"); l_end.grid(row=8, column=4, padx=5, pady=5)
+
+        E_start_horiz = Entry(f); E_start_horiz.grid(row=6,column=6,padx=5,pady=5)
+        E_end_horiz = Entry(f); E_end_horiz.grid(row=8,column=6,padx=5,pady=5)
+        E_start_horiz.insert(0,HORIZ_SENTINEL);  #default
+        E_end_horiz.insert(0,HORIZ_SENTINEL);  #default
 
         b_moves=[ttk.Button(f, text='Move %d'%(n+1)) for n in range(1)]
         b_sweeps=[ttk.Button(f, text='Sweep %d'%(n+1)) for n in range(1)]

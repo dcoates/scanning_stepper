@@ -29,16 +29,16 @@
 // Zero/middle point for Stepper3 is zero
 
 // Where to begin the sweep. Button press left moves from "0" here
-#define STEPPER1_START (-32.5+10) 
+#define STEPPER1_START (-34.5+10) 
 #define STEPPER2_START -900
 #define STEPPER3_START 95
-#define STEPPER4_START -35
+#define STEPPER4_START -30
 
 // Where to sweep until. Button press right cases sweep until value is reached
-#define STEPPER1_END (32.5+10)
+#define STEPPER1_END (34.5+10)
 #define STEPPER2_END (-2) // Table/indexing has some off-by-one issues !
 #define STEPPER3_END -95
-#define STEPPER4_END 35
+#define STEPPER4_END 30
 
 // Start some number of steps in the table
 #define TABLE_START1 250
@@ -58,15 +58,18 @@
 #define NUDGE_SMALL2 250
 #define NUDGE_LARGE2 500
 #define NUDGE_SMALL3 31
-#define NUDGE_LARGE3 123
+#define NUDGE_LARGE3 127
 #define NUDGE_SMALL4 31
 #define NUDGE_LARGE4 100
 
-#define STEP_BACK1 800 //500
-#define STEP_BACK2 4450 // 850 //450
+#define STEP_BACK1 550 //500
+#define STEP_BACK2 5250 // 850 //450
 #define STEP_BACK3 NUDGE_LARGE3
 
-#define REAL_SYSTEM 0 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
+#define HORIZ_SENTINEL 9999
+
+#define REAL_SYSTEM 1 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
+// Not used too heavily. Mainly for failsafe panic buttons, and limit stuff.
 
 // These are shared between legacy.ino and this file
 // So that we can peek at the buttons
@@ -410,6 +413,8 @@ void movex(StepperState* which_motor) {
   signed long pos2=(signed long)param.toInt();
   param=strtok(NULL,",");
   signed long pos3=(signed long)param.toInt();
+  param=strtok(NULL,",");
+  signed long pos4=(signed long)param.toInt();
 
   stepper1->prepare_move( pos1,2.0*1000000.0, 1); //2 second
   stepper1->dur_extra=0.0; // move at normal_speed
@@ -425,6 +430,12 @@ void movex(StepperState* which_motor) {
   stepper3->dur_extra=0.0; // move at normal_speed
   stepper3->start_move();
 
+  if (pos4 <HORIZ_SENTINEL) {
+    stepper4->prepare_move( pos4*STEPPER4_STEPS_PER_UNIT,2.0*1000000.0, 1); //2 second
+    stepper4->dur_extra=0.0; // move at normal_speed
+    stepper4->start_move();
+  }
+
   Serial.print("moveX@");
   Serial.print(which_motor->num_motor);
   Serial.print(":");
@@ -433,6 +444,8 @@ void movex(StepperState* which_motor) {
   Serial.print(pos2);
   Serial.print(",");
   Serial.println(pos3);
+  Serial.print(",");
+  Serial.print(pos4);
 
   str_move_amount=""; // Reset for next time
   in_sweep=1;
@@ -455,7 +468,12 @@ void sweepx(StepperState* which_motor) {
   double dur_extra2=param.toFloat();
   param=strtok(NULL,",");
   signed long pos3=(signed long)param.toInt();
-
+  
+  param=strtok(NULL,",");
+  signed long horiz_start=param.toInt();
+  param=strtok(NULL,",");
+  signed long horiz_end=param.toInt();
+  
   Serial.print("sweepX@");
   Serial.print(which_motor->num_motor);
   Serial.print(":");
@@ -475,7 +493,12 @@ void sweepx(StepperState* which_motor) {
   Serial.print(",");
   Serial.print(stepper3->pos_current);
   Serial.print(",");
-  Serial.println(pos3);
+  Serial.print(pos3);
+
+  Serial.print(",");
+  Serial.print(horiz_start);
+  Serial.print(",");
+  Serial.println(horiz_end);
 
   stepper1->reset_state();
   stepper1->table_counter=table_offset; // Start partway through the lookup table
@@ -488,8 +511,14 @@ void sweepx(StepperState* which_motor) {
   stepper2->table_counter=-(STEPPER2_START-pos2);  // Index into the table. This one is one-to-one with step position
   stepper2->dur_extra = dur_extra2;
 
-  // Stepper 3 (mirror rot): just continue movement started earlier. Duration will be correct
+  // Stepper 4 horizontal
+  if (horiz_end < HORIZ_SENTINEL) {
+    stepper4->prepare_move( horiz_end*STEPPER4_STEPS_PER_UNIT,2.0*1000000.0, 1); //2 second
+    stepper4->dur_extra=0.0; // move at normal_speed
+    stepper4->start_move();
+  }      
 
+  // Stepper 3 is handled in here:
   sweep_to(
        (signed long) pos_end,
        (signed long) STEPPER2_END, // (will turn around and go back to start)
