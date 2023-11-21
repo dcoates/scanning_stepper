@@ -235,11 +235,6 @@ class App(tk.Tk):
         self.geometry('300x200')
         self.title('Main Window')
 
-        # place a button on the root window
-        ttk.Button(self,
-                text='Open a window',
-                command=self.open_window).pack(expand=True)
-
         self.open_window(0)
         self.open_window(1)
 
