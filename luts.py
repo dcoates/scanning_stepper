@@ -20,8 +20,8 @@ c=0.4721
 desired_times=(-b+np.sqrt(b**2-4*a*(-desired_y)))/(2*a)
 intervals=np.diff(desired_times)
 
-STEPPER1_START= (-34.5+10) * 100
-STEPPER1_END  = ( 34.5+10) * 100
+STEPPER1_START= (-32.5+10) * 100
+STEPPER1_END  = ( 32.5+10) * 100
 TABLE_OFFSET1  = 250 # Empirical from Chloe (stepping back off limit switch?)
 
 STEPPER2_START=-900
