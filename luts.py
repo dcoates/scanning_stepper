@@ -31,6 +31,8 @@ STEPPER2_END=0
 STEPPER3_END=-95
 STEPPER4_END=30
 
+STEPPER4_PER_UNIT=50
+
 table_val=0
 duration = 0
 dur_multiply=1.0
@@ -99,7 +101,7 @@ def coronal_pos(degrees,duration):
     pos=int( desired_pos2.shape[0] * (frac-1e-15) )
     steps_needed = int(  np.round(coronal_steps*(desired_pos2[0]-desired_pos2[pos] ) /
                    (desired_pos2[0]-desired_pos2[-1])) )
-    
+
     # This duration is for total time (double because this table contains only
     # half: going from in to out)
     difference=duration-np.sum(t_delays2[coronal_steps-steps_needed:])*2

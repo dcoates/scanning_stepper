@@ -7,6 +7,8 @@
 
 #define MODE_CALIBRATING 4 // Go until the Limit slams, then..
 #define MODE_CALIBRATING_BACK 5 // Reverse a smidgen to be off limit switch
+#define MODE_PVT 9 // Using a PVT table
+#define MODE_PVT_REVERSING 10 // During PVT, Motor 2 second-half phase
 #define STEPS_TO_REVERSE_OFF_LIMIT 100
 
 class StepperState

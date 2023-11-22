@@ -58,7 +58,7 @@ def check_serial():
     lin=ser.readline()
     if len(lin)>0:
         lin=lin.decode() #lin=lin.replace('\r\n','\n')
-        print('Ser:', lin, end='', flush=True)
+        print(lin, end='', flush=True)
 
         if 'ready' in lin:
             theApp.l_status.configure(text='READY', foreground='green' )
@@ -186,10 +186,14 @@ def movex(arg,evnt):
     rot_pos=-luts.rot_pos( sweep_begin  )
 
     n=27
+    angles=np.linspace(begin_frac,end_frac,n)
     pos1=np.linspace(stepnum, step_end, n)
-    pos2=np.linspace(-coronal_pos, coronal_pos, n)
+    pos1=[luts.get_pos(angl1,end_frac,sweep_dur)[0] for angl1 in angles]
+    pos2=[luts.coronal_pos(abs(-angl1*luts.MAX_DEGREES),sweep_dur)[0] for angl1 in angles]
     pos3=np.linspace(rot_pos, -rot_pos, n)
-    pos4=np.linspace(horiz_sweep_begin,horiz_sweep_end,n)
+    pos4=np.linspace(horiz_sweep_begin*luts.STEPPER4_PER_UNIT,horiz_sweep_end*luts.STEPPER4_PER_UNIT,n)
+
+    print( angles, pos1)
 
     s=('*').encode()
     ser.write(s)
@@ -197,7 +201,7 @@ def movex(arg,evnt):
     new_sweep_count=0
 
     for nidx in np.arange(1,sweep_steps+1):
-        s=('%d,%d,%d,%dv'%(pos1[nidx],-abs(pos2[nidx]),pos3[nidx],pos4[nidx])).encode()
+        s=('%d,%d,%d,%dv'%(pos1[nidx],-pos2[nidx],pos3[nidx],pos4[nidx])).encode()
         print( s )
         ser.write(s)
         time.sleep(0.02)

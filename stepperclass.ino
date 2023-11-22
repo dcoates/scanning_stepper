@@ -200,6 +200,8 @@ void StepperState::debug_output(unsigned long msg) {
     Serial.print(" ");
     Serial.print(interval_next);
     Serial.print(" ");
+    Serial.print(pos_start);
+    Serial.print(" ");
     Serial.println(table_counter);
 }
 #else
@@ -333,19 +335,24 @@ void StepperState::do_update() {
       
     // Decide whether to re-arm for another movement.
     // Since going single steps, testing for equality should be okay
-		if (pos_current == mypos_end) {
 
-      // If motor 2, that reverse once:
-      // Mode==0 is normal moves, so we don't want to do the reversal in that case
-      // Comparison to zero is probably better than STEPPER2_END
-      if ( (num_motor==2) && (pos_current==(signed int)STEPPER2_END) && (mode!=0) ) {
-          set_table_info(2); // Reverse direction from different lut
-          table_counter=0;   // Reset the position pointer, to the beginning of the reversed LUT
-          // This should be okay even when reversing.
+    // First check special auto-reversal for Stepper2
+    // If motor 2, that reverse once:
+    // Mode==0 is normal moves, so we don't want to do the reversal in that case
+    // Comparison to zero is probably better than STEPPER2_END
+    // In PVT mode, don't want to reverse here
+    if ( (num_motor==2) && (pos_current==(signed int)STEPPER2_END) && (mode!=0) && (mode!=MODE_PVT) ) {
+        set_table_info(2); // Reverse direction from different lut
+        table_counter=0;   // Reset the position pointer, to the beginning of the reversed LUT
+        // This should be okay even when reversing.
 
-          prepare_move( (signed long) this->pos_start, 0L, MODE_REVERSING); // This will reverse dir also and reset mypos_end, etc. //Reversing=mode 3
-          start_move();  
-      } else {
+        prepare_move( (signed long) this->pos_start, 0L, MODE_REVERSING); // This will reverse dir also and reset mypos_end, etc. //Reversing=mode 3
+        start_move();  
+
+        debug_output(9);
+    } // normal motor. Finished?
+    else {
+      if (pos_current == mypos_end) {
         // done, at destination
         stop_move(1);
 
