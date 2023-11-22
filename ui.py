@@ -13,10 +13,16 @@ import camera_window
 
 import luts
 
+import numpy as np
+import time
+
 HORIZ_SENTINEL=9999
 
 ### Config/settings
 SETTINGS={}
+
+new_sweep_count=0;
+sweep_steps=26
 
 def read_config(fname='./config.xml'):
     settings={}
@@ -147,6 +153,8 @@ def ser_command(arg,evnt):
     ser.write(arg)
 
 def movex(arg,evnt):
+    global new_sweep_count
+
     sweep_begin = float( E_start.get() )
     sweep_dur = float( E_dur.get() )
     sweep_end = float( E_end.get() )
@@ -163,18 +171,13 @@ def movex(arg,evnt):
 
     #print( begin_frac, coronal_pos, rot_pos )
 
-    s=('%d,%d,%d,%d,%c'%(stepnum,-coronal_pos,rot_pos,horiz_sweep_begin,chr(ord('A')+arg) )).encode()
-    ser.write(s)
-    #print()
-
-def sweepx(arg,evnt):
     sweep_begin = float( E_start.get() )
     sweep_end = float( E_end.get() )
     sweep_dur = float( E_dur.get() )
 
     horiz_sweep_begin = int( E_start_horiz.get() )
     horiz_sweep_end = int( E_end_horiz.get() )
-    
+
     begin_frac = sweep_begin/luts.MAX_DEGREES
     end_frac = sweep_end/luts.MAX_DEGREES
 
@@ -182,17 +185,48 @@ def sweepx(arg,evnt):
     coronal_pos,coronal_extra=luts.coronal_pos( abs(sweep_begin), sweep_dur  )
     rot_pos=-luts.rot_pos( sweep_begin  )
 
-    s=('%d,%d,%d,%0.4f,%d,%d,%0.4f,%d,%d,%d,%c'%(stepnum,step_end,sweep_dur*1e6,extra_per_step,table_val,
-    -coronal_pos,coronal_extra,rot_pos,horiz_sweep_begin,horiz_sweep_end,chr(ord('B')+arg) )).encode()
-    print( s )
+    n=27
+    pos1=np.linspace(stepnum, step_end, n)
+    pos2=np.linspace(-coronal_pos, coronal_pos, n)
+    pos3=np.linspace(rot_pos, -rot_pos, n)
+    pos4=np.linspace(horiz_sweep_begin,horiz_sweep_end,n)
+
+    s=('*').encode()
     ser.write(s)
+    time.sleep(0.02)
+    new_sweep_count=0
+
+    for nidx in np.arange(1,sweep_steps+1):
+        s=('%d,%d,%d,%dv'%(pos1[nidx],-abs(pos2[nidx]),pos3[nidx],pos4[nidx])).encode()
+        print( s )
+        ser.write(s)
+        time.sleep(0.02)
     print()
+
+    # Now move
+    s=('%d,%d,%d,%d,%c'%(stepnum,-coronal_pos,rot_pos,horiz_sweep_begin,chr(ord('A')+arg) )).encode()
+    ser.write(s)
+    b_sweeps[0].configure(text="Sweep Step #%d/%d"%(new_sweep_count+1,sweep_steps) )
+    #print()
+
+def sweepx(arg,evnt):
+    global new_sweep_count
+
+    s='V'.encode()
+    ser.write(s)
+    #s=('%d,%d,%d,%0.4f,%d,%d,%0.4f,%d,%d,%d,%c'%(stepnum,step_end,sweep_dur*1e6,extra_per_step,table_val,
+    #-coronal_pos,coronal_extra,rot_pos,horiz_sweep_begin,horiz_sweep_end,chr(ord('B')+arg) )).encode()
+    #ser.write(s)
+
+    b_sweeps[0].configure(text="Sweep Step #%d/%d"%(new_sweep_count+1,sweep_steps))
+    new_sweep_count += 1
 
 # Create the widget UI
 class App(Frame):
     def __init__(self,parent,SETTINGS):
         global E_start, E_dur , E_end
         global E_start_horiz, E_end_horiz
+        global b_sweeps
 
         super().__init__()
 
