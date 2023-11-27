@@ -155,6 +155,16 @@ def ser_command(arg,evnt):
 def movex(arg,evnt):
     global new_sweep_count
 
+    pos1 = float( E_start.get() )
+    pos2 = float( E_dur.get() )
+    pos3 = float( E_end.get() )
+    pos4 = float( E_start_horiz.get() )
+    s=('%d,%d,%d,%d,%c'%(pos1,pos2,pos3,pos4,chr(ord('A')+arg) )).encode()
+    ser.write(s)
+
+def movex_PVT(arg,evnt):
+    global new_sweep_count
+
     sweep_begin = float( E_start.get() )
     sweep_dur = float( E_dur.get() )
     sweep_end = float( E_end.get() )
@@ -210,8 +220,8 @@ def movex(arg,evnt):
     # Now move
     s=('%d,%d,%d,%d,%c'%(stepnum,-coronal_pos,rot_pos,horiz_sweep_begin,chr(ord('A')+arg) )).encode()
     ser.write(s)
-    b_sweeps[0].configure(text="Sweep Step #%d/%d"%(new_sweep_count+1,sweep_steps) )
-    #print()
+
+    b_sweeps[0].configure(text="Sweep X "%(new_sweep_count+1,sweep_steps) )
 
 def sweepx(arg,evnt):
     global new_sweep_count
