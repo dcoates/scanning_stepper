@@ -14,7 +14,8 @@
 //#define STEPPER4_STEPS_PER_UNIT (1600.0/4.0) /* Degrees. Empirical: not sure why "/4" */
 #define STEPPER4_STEPS_PER_UNIT (400/8.0)
 
-#define VERBOSE 0
+#define VERBOSE  0
+#define VERBOSE2 1
 
 // Stepper 1: up/down scissors lifter: DIP? . Lookup table to support non-linear lift
 // Stepper 2: in/out: DIP? . lookup table to allow cosine motion
@@ -634,21 +635,25 @@ void movex(StepperState* which_motor) {
   stepper3->start_move();
 
   if (pos4 <HORIZ_SENTINEL) {
-    stepper4->prepare_move( pos4*STEPPER4_STEPS_PER_UNIT,2.0*1000000.0, 1); //2 second
+    stepper4->prepare_move( pos4,2.0*1000000.0, 1); //2 second
     stepper4->dur_extra=0.0; // move at normal_speed
     stepper4->start_move();
   }
 
-  Serial.print("moveX@");
-  Serial.print(which_motor->num_motor);
+#if VERBOSE2
+  unsigned long now=micros();
+  Serial.print(now);
+  Serial.print(" mvX");
+  //Serial.print(which_motor->num_motor);
   Serial.print(":");
   Serial.print(pos1);
   Serial.print(",");
   Serial.print(pos2);
   Serial.print(",");
-  Serial.println(pos3);
+  Serial.print(pos3);
   Serial.print(",");
-  Serial.print(pos4);
+  Serial.println(pos4);
+#endif
 
   in_sweep=1;
 }
@@ -715,7 +720,7 @@ void sweepx(StepperState* which_motor) {
 
   // Stepper 4 horizontal
   if (horiz_end < HORIZ_SENTINEL) {
-    stepper4->prepare_move( horiz_end*STEPPER4_STEPS_PER_UNIT,2.0*1000000.0, 1); //2 second
+    stepper4->prepare_move( horiz_end,2.0*1000000.0, 1); //2 second
     stepper4->dur_extra=0.0; // move at normal_speed
     stepper4->start_move();
   }      

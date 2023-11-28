@@ -5,18 +5,17 @@ import serial
 from serial.tools.list_ports import comports
 from functools import partial
 import xml.etree.ElementTree as ET
-
 import os
 import os.path
-
 import camera_window
-
 import luts
-
 import numpy as np
 import time
 
 HORIZ_SENTINEL=9999
+
+VSWEEP_START=-20
+SWEEP_DUR=3
 
 ### Config/settings
 SETTINGS={}
@@ -163,12 +162,15 @@ def movex(arg,evnt):
     ser.write(s)
 
 def make_positions(npos=27):
-    sweep_begin = int( E_pos1.get() )
-    sweep_dur = int( E_pos2.get() )
-    sweep_end = int( E_pos3.get() )
+    sweep_params= E_sweep.get().split()
+    sweep_begin = int( sweep_params[0] )
+    sweep_dur = int( sweep_params[1] )
+    sweep_end = -int( sweep_params[0] )
 
     horiz_sweep_begin = int( E_horiz_pos.get() )
     horiz_sweep_end = -int( E_horiz_pos.get() )
+    if horiz_sweep_begin==HORIZ_SENTINEL:
+        horiz_sweep_end = HORIZ_SENTINEL
 
     begin_frac = sweep_begin/luts.MAX_DEGREES
     end_frac = sweep_end/luts.MAX_DEGREES
@@ -179,26 +181,12 @@ def make_positions(npos=27):
 
     #print( begin_frac, coronal_pos, rot_pos )
 
-    sweep_begin = int( E_pos1.get() )
-    sweep_end = int( E_pos3.get() )
-    sweep_dur = int( E_pos2.get() )
-
-    horiz_sweep_begin = int( E_horiz_pos.get() )
-    horiz_sweep_end = -int( E_horiz_pos.get() )
-
-    begin_frac = sweep_begin/luts.MAX_DEGREES
-    end_frac = sweep_end/luts.MAX_DEGREES
-
-    stepnum,step_end,extra_per_step,table_val=luts.get_pos(begin_frac, end_frac, sweep_dur)
-    coronal_pos,coronal_extra=luts.coronal_pos( abs(sweep_begin), sweep_dur  )
-    rot_pos=-luts.rot_pos( sweep_begin  )
-
     angles=np.linspace(begin_frac,end_frac,npos)
     pos1=np.linspace(stepnum, step_end, npos)
     pos1=[luts.get_pos(angl1,end_frac,sweep_dur)[0] for angl1 in angles]
     pos2=[luts.coronal_pos(abs(-angl1*luts.MAX_DEGREES),sweep_dur)[0] for angl1 in angles]
     pos3=np.linspace(rot_pos, -rot_pos, npos)
-    pos4=np.linspace(horiz_sweep_begin*luts.STEPPER4_PER_UNIT,horiz_sweep_end*luts.STEPPER4_PER_UNIT,npos)
+    pos4=np.linspace(horiz_sweep_begin,horiz_sweep_end,npos)
     return angles,pos1,pos2,pos3,pos4
 
 
@@ -210,11 +198,6 @@ def add_pos(combo):
         combo_entries += ['%2d:(%+3d) %+5d %+4d %+3d'%(nwhich,int(nval*20),pos1[nwhich],-pos2[nwhich],pos3[nwhich]) ]
 
     combo["values"]=combo_entries
-    #Font_tuple = ("Fira Mono", 20) #, "bold")
-    #fixed = ttk.Style()
-    #root.option_add("*TCombobox*Listbox*Font", bigfont)
-#bigfont = tkFont.Font(family="Helvetica",size=20)
-#root.option_add("*TCombobox*Listbox*Font", bigfont)
 
 def choose_pos(event):
     vals=list_pos.get().split() 
@@ -226,7 +209,7 @@ def choose_pos(event):
     E_pos3.delete(0,"end");
     E_pos3.insert(0,vals[-1] )
 
-def movex_PVT(arg,evnt):
+def send_PVT(arg,evnt):
     global new_sweep_count
 
     angles,pos1,pos2,pos3,pos4=make_positions()
@@ -243,10 +226,10 @@ def movex_PVT(arg,evnt):
     print()
 
     # Now move
-    s=('%d,%d,%d,%d,%c'%(stepnum,-coronal_pos,rot_pos,horiz_sweep_begin,chr(ord('A')+arg) )).encode()
-    ser.write(s)
+    #s=('%d,%d,%d,%d,%c'%(stepnum,-coronal_pos,rot_pos,horiz_sweep_begin,chr(ord('A')+arg) )).encode()
+    #ser.write(s)
 
-    b_sweeps[0].configure(text="Sweep X "%(new_sweep_count+1,sweep_steps) )
+    #b_sweeps[0].configure(text="Sweep X "%(new_sweep_count+1,sweep_steps) )
 
 def sweepx(arg,evnt):
     global new_sweep_count
@@ -309,25 +292,29 @@ class App(Frame):
         E_pos3 = Entry(f)
         E_pos3.grid(row=8,column=5,padx=5,pady=5)
 
-        E_pos1.insert(0,"-20");  #default
-        E_pos2.insert(0,"3");  #default
-        E_pos3.insert(0,"20");  #default
+        E_pos1.insert(0,str(VSWEEP_START));  #default
+        E_pos2.insert(0,str(SWEEP_DUR));  #default
+        E_pos3.insert(0,str(-VSWEEP_START));  #default
 
         l_start = ttk.Label(f, text="Pos:", justify="right"); l_start.grid(row=6, column=4, padx=5, pady=5)
         l_dur = ttk.Label(f, text="HSweep:", justify="right"); l_dur.grid(row=5, column=6, padx=5, pady=5)
         l_end = ttk.Label(f, text="End:", justify="right"); l_end.grid(row=8, column=4, padx=5, pady=5)
-        l_dur = ttk.Label(f, text="VSweep,dur:", justify="right"); l_dur.grid(row=7, column=6, padx=5, pady=5)
+        l_dur = ttk.Label(f, text="VSweep dur:", justify="right"); l_dur.grid(row=7, column=6, padx=5, pady=5)
 
         E_horiz_pos = Entry(f); E_horiz_pos.grid(row=6,column=6,padx=5,pady=5)
         E_sweep = Entry(f); E_sweep.grid(row=8,column=6,padx=5,pady=5)
         E_horiz_pos.insert(0,HORIZ_SENTINEL);  #default
-        E_sweep.insert(0,'%d,%d'%(-20,3)); 
+        E_sweep.insert(0,'%d %d'%(VSWEEP_START,SWEEP_DUR)); 
 
         b_moves=[ttk.Button(f, text='Move %d'%(n+1)) for n in range(1)]
         b_sweeps=[ttk.Button(f, text='Sweep %d'%(n+1)) for n in range(1)]
+        b_prep=[ttk.Button(f, text='Prep %d'%(n+1)) for n in range(1)]
         for nbutton,b1 in enumerate(b_moves):
             b1.grid(row=nbutton+6,column=7,padx=5,pady=5)
             b1.bind('<ButtonPress-1>',partial(movex,nbutton))
+        for nbutton,b1 in enumerate(b_prep):
+            b1.grid(row=nbutton+7,column=7,padx=5,pady=5)
+            b1.bind('<ButtonPress-1>',partial(send_PVT,nbutton))
         for nbutton,b1 in enumerate(b_sweeps):
             b1.grid(row=nbutton+8,column=7,padx=5,pady=5)
             b1.bind('<ButtonPress-1>',partial(sweepx,nbutton))
@@ -355,11 +342,7 @@ class App(Frame):
 
         for nbutton,b1 in enumerate(b_finesR):
             b1.grid(row=nbutton+2,column=3,padx=5,pady=5)
-            b1.bind('<ButtonPress-1>',partial(ser_command,codes[nbutton][2] )  )
-            b1.bind('<ButtonRelease-1>',partial(ser_command,b'x') )
 
-        for nbutton,b1 in enumerate(b_coarsesR):
-            b1.grid(row=nbutton+2,column=4,padx=5,pady=5)
             b1.bind('<ButtonPress-1>',partial(ser_command,codes[nbutton][3]))
             b1.bind('<ButtonRelease-1>',partial(ser_command,b'x'))
 
