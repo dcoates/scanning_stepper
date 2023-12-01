@@ -192,12 +192,14 @@ def make_positions(npos=27):
 
 def add_pos(combo):
     angles,pos1,pos2,pos3,pos4=make_positions()
-    print(angles)
     combo_entries=[]
     for nwhich,nval in enumerate(angles):
         combo_entries += ['%2d:(%+3d) %+5d %+4d %+3d'%(nwhich,int(nval*20),pos1[nwhich],-pos2[nwhich],pos3[nwhich]) ]
 
-    combo["values"]=combo_entries
+    list_pos["values"]=combo_entries
+
+def regen_pos(arg,evnt):
+    add_pos(arg)
 
 def choose_pos(event):
     vals=list_pos.get().split() 
@@ -309,6 +311,7 @@ class App(Frame):
         b_moves=[ttk.Button(f, text='Move %d'%(n+1)) for n in range(1)]
         b_sweeps=[ttk.Button(f, text='Sweep %d'%(n+1)) for n in range(1)]
         b_prep=[ttk.Button(f, text='Prep %d'%(n+1)) for n in range(1)]
+        b_regen=[ttk.Button(f, text='<-Regen') for n in range(1)]
         for nbutton,b1 in enumerate(b_moves):
             b1.grid(row=nbutton+6,column=7,padx=5,pady=5)
             b1.bind('<ButtonPress-1>',partial(movex,nbutton))
@@ -326,6 +329,10 @@ class App(Frame):
         list_pos = ttk.Combobox(f,textvariable=str_pos, width=30)
         add_pos( list_pos); list_pos.grid(row=9, column=6,padx=5,pady=5)
         list_pos.bind("<<ComboboxSelected>>", choose_pos )
+
+        for nbutton,b1 in enumerate(b_regen):
+            b1.grid(row=nbutton+9,column=7,padx=5,pady=5)
+            b1.bind('<ButtonPress-1>',partial(regen_pos,list_pos))
 
         # Each one goes: --,-,+,++ . They are in the top letter row of an asdf keyboard. Caps for big.
         codes=[[b'Q',b'q',b'w',b'W'], [b'E',b'e',b'r',b'R'],[b'T',b't',b'y',b'Y'], [b'U',b'u',b'i',b'I'], [b'a',b'b',b'c',b'd'] ]
