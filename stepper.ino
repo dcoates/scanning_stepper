@@ -245,21 +245,21 @@ void process_serial_commands() {
         int incomingByte = Serial.read();
 
         // Sweeps: (vertical, then horizontal)
-        if (incomingByte=='S') {
-          sweep_to_start();
-        } else if (incomingByte=='F') {
-          sweep_to_end();
-        } else if (incomingByte=='Z') {
-          sweep_to_zero();
-        }
+        if (incomingByte=='S') {sweep_to_start();}
+        else if (incomingByte=='F') {sweep_to_end();}
+        else if (incomingByte=='Z') {sweep_to_zero();}
         
         else if (incomingByte=='s') {horiz_sweep_start();}
         else if (incomingByte=='f') {horiz_sweep_end(); }
         else if (incomingByte=='z') {horiz_sweep_zero(); }
 
-        else if (incomingByte=='P') {horiz_sweep_start(); sweep_to_start(); }
+        else if (incomingByte=='K') {horiz_sweep_start(); sweep_to_start(); }
         else if (incomingByte=='L') {horiz_sweep_end(); sweep_to_end(); }
         else if (incomingByte=='O') {horiz_sweep_zero(); sweep_to_zero(); }
+
+        else if (incomingByte=='k') {horiz_sweep_end(); sweep_to_start(); }
+        else if (incomingByte=='l') {horiz_sweep_start(); sweep_to_end(); }
+        else if (incomingByte=='o') {horiz_sweep_zero(); sweep_to_zero(); }
 
         // Debug/info
         else if (incomingByte=='?') {

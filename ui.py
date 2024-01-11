@@ -64,6 +64,8 @@ def check_serial():
 
 def getpos():
     ser.write(b'p');
+def getdbg():
+    ser.write(b'?');
 
 # TODO: All the single-letter commands could call a single function (doing ser.write), with a dictionary of
 # human-readable mapping from command to letter code.
@@ -86,10 +88,18 @@ def movH2():
 def movD0():
     ser.write(b'O'); # Zero
 def movD1():
-    ser.write(b'I'); # Initial
+    ser.write(b'K'); # Initial
 def movD2():
     start_sweep('D')
     ser.write(b'L'); # Last
+
+def movD0_2():
+    ser.write(b'o'); # Zero
+def movD1_2():
+    ser.write(b'k'); # Initial
+def movD2_2():
+    start_sweep('D2')
+    ser.write(b'l'); # Last
 
 def start_sweep(str_which,path_results_base='results'):
     path_sweepfiles=theApp.str_filename.get()
@@ -164,6 +174,7 @@ class App(Frame):
         self.b_connect.grid(row=1,column=7, padx=5, pady=5)
 
         b_pos = ttk.Button(f, text="Get pos", command=getpos).grid(row=1, column=2, padx=5, pady=5)
+        b_pos = ttk.Button(f, text="DEBUG", command=getdbg).grid(row=1, column=3, padx=5, pady=5)
         self.l_p1 = ttk.Label(f, text="Pos1:"); self.l_p1.grid(row=2, column=2, padx=5, pady=5)
         self.l_p2 = ttk.Label(f, text="Pos2:"); self.l_p2.grid(row=3, column=2, padx=5, pady=5)
         self.l_p3 = ttk.Label(f, text="Pos3:"); self.l_p3.grid(row=4, column=2, padx=5, pady=5)
@@ -247,6 +258,11 @@ class App(Frame):
         b_Ddo1 = ttk.Button(f, text="Sweep Start", command=movD1); b_Ddo1.grid(row=12, column=0, padx=5, pady=5)
         b_Ddo0 = ttk.Button(f, text="Sweep Zero",  command=movD0); b_Ddo0.grid(row=12, column=2, padx=5, pady=5)
         b_Ddo2 = ttk.Button(f, text="Sweep End",   command=movD2); b_Ddo2.grid(row=12, column=4, padx=5, pady=5)
+
+        b_lDiag2 = ttk.Label(f, text="Diagonal2:"); b_lDiag2.grid(row=13, column=2, padx=5, pady=10)
+        b_D2do1 = ttk.Button(f, text="Sweep Start", command=movD1_2); b_D2do1.grid(row=14, column=0, padx=5, pady=5)
+        b_D2do0 = ttk.Button(f, text="Sweep Zero",  command=movD0_2); b_D2do0.grid(row=14, column=2, padx=5, pady=5)
+        b_D2do2 = ttk.Button(f, text="Sweep End",   command=movD2_2); b_D2do2.grid(row=14, column=4, padx=5, pady=5)
 
         self.l_name = ttk.Label(f, text="Subject ID:", anchor=tkinter.E); self.l_name.grid(row=11, column=5, padx=0, pady=5)
         self.str_filename=StringVar(); #"Enter Subject ID");
