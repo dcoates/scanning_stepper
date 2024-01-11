@@ -47,17 +47,18 @@ def check_serial():
 
     lin=ser.readline()
     if len(lin)>0:
-        print('Ser:', lin, end='', flush=True)
+        lin=lin.decode() #lin=lin.replace('\r\n','\n')
+        print(lin, end='', flush=True)
 
-        if b'ready' in lin:
+        if 'ready' in lin:
             theApp.l_status.configure(text='READY', foreground='green' )
-        elif b'pos1' in lin:
+        elif 'pos1' in lin:
             theApp.l_p1.configure(text=lin[0:])
-        elif b'pos2' in lin:
+        elif 'pos2' in lin:
             theApp.l_p2.configure(text=lin[0:])
-        elif b'pos3' in lin:
+        elif 'pos3' in lin:
             theApp.l_p3.configure(text=lin[0:])
-        elif b'pos4' in lin:
+        elif 'pos4' in lin:
             theApp.l_p4.configure(text=lin[0:])
 
     theApp.after(10, lambda: check_serial()) # Poll often (10ms)
