@@ -381,7 +381,7 @@ void loop() {
         pos_buffer[pos_curr++] = (signed long)stepper1->pos_current;
         pos_buffer[pos_curr++] = (signed long)stepper2->pos_current;
         pos_buffer[pos_curr++] = (signed long)stepper3->pos_current;
-        pos_buffer[pos_curr++] = (signed long)stepper3->pos_current;
+        pos_buffer[pos_curr++] = (signed long)stepper4->pos_current;
         if (pos_curr >= POS_BUF_SIZE)
           pos_curr = 0; // Paranoid buffer size checking
           
