@@ -58,13 +58,13 @@ def get_pos(sweep_beg_frac, sweep_end_frac, desired_duration,is_end=False):
     # start_steps: positive (0-6500) steps from the begin (backoff-limit) position
     # Index is the index in the lookup table (basically an offset of +250 from 0 (for first relevant entry) )
     # Location is the number historically used by Arduino to represent position (with 0 in the middle/alignment position)
-    start_steps = round( np.interp(start_time, desired_times, xr_steps) )
-    start_index = start_steps + TABLE_OFFSET1
+    start_steps = round( np.interp(start_time, desired_times, xr_steps+1) )
+    start_index = start_steps + TABLE_OFFSET1*0
     start_location = start_steps + STEPPER1_START
 
-    end_steps = round( np.interp(end_time, desired_times, xr_steps) )
+    end_steps = round( np.interp(end_time, desired_times, xr_steps+1) )
     end_location = end_steps + STEPPER1_START 
-    end_index = end_steps + TABLE_OFFSET1
+    end_index = end_steps + TABLE_OFFSET1*0
 
     duration_estimate = np.sum( intervals[start_index:end_index:direction])
     dur_diff = desired_duration-duration_estimate 
@@ -79,6 +79,18 @@ def get_pos(sweep_beg_frac, sweep_end_frac, desired_duration,is_end=False):
 
     return start_location,end_location,extra_per_step,start_index
 
+def get_pos_new(fraction):
+    # New way to get a position for an arbitary "angle" is bsaed on fitting a
+    # quadratic to positions that Chloe found to work for a 3sec -20deg to 20deg scan.
+    # Fraction: -1=-20deg, 0=0deg, +1=20deg, etc.
+
+    params=[423.83905613, 889.64685276,-2249.69896004]
+
+    # Get any arbitrary position as function of fraction of this scan (timewise)
+    original_zero = 3.0/2.0 # Original time=3.0sec
+    time = original_zero + fraction*3.0/2.0
+    pos=params[0]*time**2+params[1]*time+params[2]
+    return pos
 
 #----------------------------------------
 # INOUT Table (coronal)
