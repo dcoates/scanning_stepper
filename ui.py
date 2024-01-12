@@ -175,17 +175,19 @@ def make_positions(npos=27,use_UI=True):
         sweep_end = -sweep_begin
 
         horiz_sweep_begin = float( E_horiz_pos.get() )
-        horiz_sweep_end = -horiz_sweep_begin
     else:
         sweep_begin = -10
         sweep_dur=3
         sweep_end=10
 
         horiz_sweep_begin = -20
-        horiz_sweep_end = 20
 
+    horiz_sweep_end = -horiz_sweep_begin
     if horiz_sweep_begin==HORIZ_SENTINEL:
         horiz_sweep_end = HORIZ_SENTINEL
+    else:
+        horiz_sweep_begin *= luts.STEPPER4_PER_UNIT
+        horiz_sweep_end *= luts.STEPPER4_PER_UNIT
 
     begin_frac = sweep_begin/luts.MAX_DEGREES
     end_frac = sweep_end/luts.MAX_DEGREES
@@ -264,8 +266,8 @@ def sweepx(arg,evnt):
     #-coronal_pos,coronal_extra,rot_pos,horiz_sweep_begin,horiz_sweep_end,chr(ord('B')+arg) )).encode()
     #ser.write(s)
 
-    b_sweeps[0].configure(text="Sweep Step #%d/%d"%(new_sweep_count+1,sweep_steps))
-    new_sweep_count += 1
+    #b_sweeps[0].configure(text="Sweep Step #%d/%d"%(new_sweep_count+1,sweep_steps))
+    #new_sweep_count += 1
 
 # Create the widget UI
 class App(Frame):
@@ -420,11 +422,11 @@ class App(Frame):
         b_Ddo0 = ttk.Button(f, text="Sweep Zero",  command=movD0); b_Ddo0.grid(row=12, column=2, padx=5, pady=5)
         b_Ddo2 = ttk.Button(f, text="Sweep End",   command=movD2); b_Ddo2.grid(row=12, column=4, padx=5, pady=5)
 
-        b_do1.configure(state='disable');
+        #b_do1.configure(state='disable');
         b_do2.configure(state='disable');
-        b_Hdo1.configure(state='disable');
+        #b_Hdo1.configure(state='disable');
         b_Hdo2.configure(state='disable');
-        b_Ddo1.configure(state='disable');
+        #b_Ddo1.configure(state='disable');
         b_Ddo2.configure(state='disable');
 
         self.l_name = ttk.Label(f, text="Subject ID:", anchor=tkinter.E); self.l_name.grid(row=11, column=5, padx=0, pady=5)

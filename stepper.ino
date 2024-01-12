@@ -329,10 +329,7 @@ void process_serial_commands() {
           { str_input_buffer += (char)incomingByte; } // append to end of string
 
 		// Use the accumulated number:
-        else if (incomingByte=='A') {movex(stepper1);}
-        else if (incomingByte=='B') {sweepx(stepper1);}
-        //else if (incomingByte=='C') {movex(stepper3);} // Not relevant
-        //else if (incomingByte=='D') {movex(stepper4);} // Not relevant
+        else if (incomingByte=='A') {movex();}
 
       else if (incomingByte=='v') {pvt_add();}
       else if (incomingByte=='V') {pvt_execute();}
@@ -608,7 +605,7 @@ void pvt_next() {
 }
 
 
-void movex(StepperState* which_motor) {
+void movex(void) {
   String param=strtok(str_input_buffer.c_str(),",");
   signed long pos1=(signed long)param.toInt();
   param=strtok(NULL,",");
