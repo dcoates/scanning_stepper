@@ -32,19 +32,19 @@
 // Zero/middle point for Stepper3 is zero
 
 // Where to begin the sweep. Button press left moves from "0" here
-#define STEPPER1_START (-34.5+10) 
+#define STEPPER1_START (-32.5+10.5) 
 #define STEPPER2_START -900
 #define STEPPER3_START 95
 #define STEPPER4_START -30
 
 // Where to sweep until. Button press right cases sweep until value is reached
-#define STEPPER1_END (34.5+10)
+#define STEPPER1_END (32.5+10.5)
 #define STEPPER2_END (0) // Table/indexing has some off-by-one issues !
 #define STEPPER3_END -95
 #define STEPPER4_END 30
 
 // Start some number of steps in the table
-#define TABLE_START1 250
+#define TABLE_START1 200 //250
 
 // -30 to +30 : 30.36mm
 #define SEC_TO_USEC 1000000
