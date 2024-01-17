@@ -14,6 +14,9 @@
 //#define STEPPER4_STEPS_PER_UNIT (1600.0/4.0) /* Degrees. Empirical: not sure why "/4" */
 #define STEPPER4_STEPS_PER_UNIT (400/8.0)
 
+#define VERBOSE  0
+#define VERBOSE2 1
+
 // Stepper 1: up/down scissors lifter: DIP? . Lookup table to support non-linear lift
 // Stepper 2: in/out: DIP? . lookup table to allow cosine motion
 // Stepper 3: rotational: DIP?  Constant steps.
@@ -22,28 +25,30 @@
 // limit2: Comes from the horizontal motor bundle: (old motor #1)
 // limit3: Comes from the motor #2 bundle
 // limit4: No limit switch for motor 4 (horizontal) yet
-// Camera is the pair wired into the #3 bundle
+// Camera is the pair wired into the #3 bundgle
 
-// Zero/middle point for Stepper1 is at 1300 steps away from "0" (due to non-linear scissors)
+// Zero/middle point for Stepper1 is at 1000 steps away from "0"/middle (due to non-linear scissors)
 // Zero/middle point for Stepper2?
 // Zero/middle point for Stepper3 is zero
 
 // Where to begin the sweep. Button press left moves from "0" here
-#define STEPPER1_START (-32.5+10) 
+#define STEPPER1_START (-32.5+10.5) 
 #define STEPPER2_START -900
 #define STEPPER3_START 95
 #define STEPPER4_START -30
 
 // Where to sweep until. Button press right cases sweep until value is reached
-#define STEPPER1_END (32.5+10)
-#define STEPPER2_END 0
+#define STEPPER1_END (32.5+10.5)
+#define STEPPER2_END (0) // Table/indexing has some off-by-one issues !
 #define STEPPER3_END -95
 #define STEPPER4_END 30
 
 // Start some number of steps in the table
-#define TABLE_START1 250
+#define TABLE_START1 200 //250
 
 // -30 to +30 : 30.36mm
+#define SEC_TO_USEC 1000000
+#define MICRO_TO_USEC 1000
 
 #define SWEEP_TIME_SEC_H 3.0
 #define SWEEP_TIME_SEC_V 3.0
@@ -58,15 +63,18 @@
 #define NUDGE_SMALL2 250
 #define NUDGE_LARGE2 500
 #define NUDGE_SMALL3 31
-#define NUDGE_LARGE3 123
+#define NUDGE_LARGE3 127
 #define NUDGE_SMALL4 31
 #define NUDGE_LARGE4 100
 
-#define STEP_BACK1 800 //500
-#define STEP_BACK2 4450 // 850 //450
+#define STEP_BACK1 550 //500
+#define STEP_BACK2 5250 // 850 //450
 #define STEP_BACK3 NUDGE_LARGE3
 
-#define REAL_SYSTEM 1 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
+#define HORIZ_SENTINEL 9999
+
+#define REAL_SYSTEM 0 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
+// Not used too heavily. Mainly for failsafe panic buttons, and limit stuff.
 
 // These are shared between legacy.ino and this file
 // So that we can peek at the buttons
@@ -78,13 +86,15 @@ int dir2Current;
 int dir3Current;
 
 // class instances for each stepper motor
-StepperLUT8* stepper1;
-StepperLUT16* stepper2;
+//StepperLUT8* stepper1;
+//StepperLUT16* stepper2;
+StepperConstant* stepper1;
+StepperConstant* stepper2;
 StepperConstant* stepper3;
 StepperConstant* stepper4;
 
 // One motor instance will write into the trace buffer:
-#define TRACE_BUF_SIZE 4
+#define TRACE_BUF_SIZE 1
 unsigned int any_sweeping=0;
 unsigned int step_trace_counter=0;
 unsigned int step_trace[TRACE_BUF_SIZE];
@@ -99,12 +109,17 @@ unsigned long bad_now;
 unsigned long bad_elapsed;
 unsigned long bad_potime;
 
-
 #define POS_BUF_SIZE 32 * 5
 unsigned int pos_curr=0;
 signed long pos_buffer[POS_BUF_SIZE]; // Store tiime + pos for each motor
 unsigned long sweep_snap_time=0;
 unsigned long sweep_snap_interval;
+
+#define PVT_TABLE_ENTRIES 32
+uint8_t pvt_count=0;
+uint8_t pvt_index=0; // for current sweep
+signed int pvt_table[PVT_TABLE_ENTRIES*4];
+uint8_t in_pvt_sweep=0;
 
 uint8_t in_sweep=0;
 void setup() {
@@ -114,12 +129,15 @@ void setup() {
     
     legacy_setup(); // Call legacy setup code. Sets pin directions, mainly.
 
-    stepper1 = new StepperLUT8(1, DRIVER1_PULSE, DRIVER1_DIR, limit1, (signed long)(STEPPER1_START*STEPPER1_STEPS_PER_UNIT));
-    stepper2 = new StepperLUT16(2, DRIVER2_PULSE, DRIVER2_DIR, limit2, (signed long)(STEPPER2_START*STEPPER2_STEPS_PER_UNIT)); 
+    //stepper1 = new StepperLUT8(1, DRIVER1_PULSE, DRIVER1_DIR, limit1, (signed long)(STEPPER1_START*STEPPER1_STEPS_PER_UNIT));
+    //stepper2 = new StepperLUT16(2, DRIVER2_PULSE, DRIVER2_DIR, limit2, (signed long)(STEPPER2_START*STEPPER2_STEPS_PER_UNIT)); 
+    stepper1 = new StepperConstant(1, DRIVER1_PULSE,DRIVER1_DIR, limit1, (signed long)(STEPPER1_START*STEPPER1_STEPS_PER_UNIT));
+    stepper2 = new StepperConstant(2, DRIVER2_PULSE,DRIVER2_DIR, limit2, (signed long)(STEPPER2_START*STEPPER2_STEPS_PER_UNIT));
     stepper3 = new StepperConstant(3, DRIVER3_PULSE,DRIVER3_DIR, limit3, (signed long)(STEPPER3_START*STEPPER3_STEPS_PER_UNIT));
     stepper4 = new StepperConstant(4, DRIVER4_PULSE,DRIVER4_DIR, limit3, (signed long)(STEPPER4_START*STEPPER4_STEPS_PER_UNIT));
 
     in_sweep=0;
+    in_pvt_sweep=0;
 }
 
 void print_pos()
@@ -181,6 +199,16 @@ void debug_blast() {
 
   Serial.println("NOW: ");
   print_pos();
+
+  for (n=0; n<pvt_count; n++) {
+    Serial.print(n);
+    Serial.print(": ");            
+    for (int m=0; m<4; m++) {
+      Serial.print(pvt_table[n*4+m]);
+      Serial.print(" ");
+    }
+    Serial.println();
+  }
 }
 
 void handle_motion(StepperState* which_motor, signed long amount) {
@@ -235,7 +263,7 @@ void smooth_stop() {
   in_sweep=0;
 };
 
-String str_move_amount= ""; // USed like global variable in move1
+String str_input_buffer= ""; // USed like global variable in move1
 
 void process_serial_commands() {
   
@@ -296,15 +324,16 @@ void process_serial_commands() {
 
         else if (incomingByte=='x') {smooth_stop();}
 
-		// accumulate string
-		else if (incomingByte=='-') { str_move_amount += (char)incomingByte; }
-		else if (incomingByte>='0' && incomingByte<='9') { str_move_amount += (char)incomingByte; }
+		// accumulate string into buffer for various functions:
+        else if ( (incomingByte>='0' && incomingByte<='9') || incomingByte=='-' || incomingByte=='.' || incomingByte==',')
+          { str_input_buffer += (char)incomingByte; } // append to end of string
 
 		// Use the accumulated number:
-        else if (incomingByte=='A') {move1(stepper1);}
-        else if (incomingByte=='B') {move1(stepper2);}
-        else if (incomingByte=='C') {move1(stepper3);}
-        else if (incomingByte=='D') {move1(stepper4);}
+        else if (incomingByte=='A') {movex();}
+
+      else if (incomingByte=='v') {pvt_add();}
+      else if (incomingByte=='V') {pvt_execute();}
+      else if (incomingByte=='*') {pvt_count=0; pvt_index=0;} //reset the count
     }
 }
 
@@ -333,21 +362,9 @@ void loop() {
       //noInterrupts();
     } 
 #endif // REAL_SYSTEM
-
-#if 0 // don't do this. Problem is we don't know when the sweep starts for proper grab
-    // New: send camera pulses ieven if not sweeping
-      now = micros();
-      if ( (now - sweep_snap_time ) >= sweep_snap_interval) {
-        digitalWrite(camera_pulse,HIGH); // Tell camera to take a snap
-
-         sweep_snap_time = now; // try to get the next one to happen a little earlier
-
-      } else {
-        digitalWrite(camera_pulse,LOW);
-      }
-#endif //0
       
   } else { // In a sweep
+
 #if REAL_SYSTEM
     // Failsafe: touch right GO button to stop. Don't even debounce: bail immediately if any button action.
     if (digitalRead(m3go)==HIGH) {
@@ -378,14 +395,19 @@ void loop() {
           error=0; // no error on first one
           
         pos_buffer[pos_curr++] = now;
-        pos_buffer[pos_curr++] = (signed long)stepper1->pos_current;
-        pos_buffer[pos_curr++] = (signed long)stepper2->pos_current;
-        pos_buffer[pos_curr++] = (signed long)stepper3->pos_current;
-        pos_buffer[pos_curr++] = (signed long)stepper3->pos_current;
+        pos_buffer[pos_curr++] = (signed int)stepper1->pos_current;
+        pos_buffer[pos_curr++] = (signed int)stepper2->pos_current;
+        pos_buffer[pos_curr++] = (signed int)stepper3->pos_current;
+        pos_buffer[pos_curr++] = (signed int)stepper4->pos_current;
+        //pos_buffer[pos_curr++] = (signed int)stepper1->table_counter;
         if (pos_curr >= POS_BUF_SIZE)
           pos_curr = 0; // Paranoid buffer size checking
           
-         sweep_snap_time = now-error; // try to get the next one to happen a little earlier
+        sweep_snap_time = now-error; // try to get the next one to happen a little earlier
+
+        if (pos_curr != 0) {
+          pvt_next(); // Do that if need be 
+        }
 
         // Only exit the sweep after the last picture taken
         in_sweep = (stepper1->sweeping || stepper2->sweeping || stepper3->sweeping || stepper4->sweeping);
@@ -403,19 +425,327 @@ void loop() {
   };
 }
 
-void move1(StepperState* which_motor) {
-  signed long amt=(signed long)str_move_amount.toInt();
-  which_motor->prepare_move_relative( amt,2.0*1000000.0, 1); //2 second
-  which_motor->start_move();
-  Serial.print("move1 ");
-  Serial.println(amt);
-  str_move_amount=""; // Reset for next time
+void pvt_add() {
+  String param=strtok(str_input_buffer.c_str(),",");
+  signed int pos1=(signed long)param.toInt();
+  param=strtok(NULL,",");
+  signed int pos2=(signed long)param.toInt();
+  param=strtok(NULL,",");
+  signed int pos3=(signed long)param.toInt();
+  param=strtok(NULL,",");
+  signed int pos4=(signed long)param.toInt();
+  str_input_buffer=""; // Reset for next time
+
+  pvt_table[pvt_count*4+0] = pos1;
+  pvt_table[pvt_count*4+1] = pos2;
+  pvt_table[pvt_count*4+2] = pos3;
+  pvt_table[pvt_count*4+3] = pos4;
+  Serial.print("PVTadd ");
+  Serial.print(pvt_count);
+  //Serial.print(":");
+  //Serial.print(pos1);
+  //Serial.print(",");
+  //Serial.print(pos2);
+  //Serial.print(",");
+  //Serial.print(pos3);
+  //Serial.print(",");
+  //Serial.println(pos4);
+
+  pvt_count++;
+  if (pvt_count>PVT_TABLE_ENTRIES)
+    pvt_count=0;
+}
+
+void pvt_execute() {
+  unsigned long now=micros();
+  Serial.print(now);
+  Serial.println(" PVT_EXE");
+
+#if 0 // Not needed since we are now letting it call sweep_to directly
+  sweep_snap_interval=(unsigned long)CAMERA_SNAP_INTERVAL_VERTICAL; // TODO
+  sweep_start_time=millis();
+  sweep_snap_time=sweep_start_time-sweep_snap_interval; // So it'll trigger immediately on entry
+
+  step_trace_counter=0;
+  pos_curr=0;
+
   in_sweep=1;
+#endif //0
+
+  pvt_index=0;
+  in_pvt_sweep=1;
+  pvt_first(); // prepare the next/first move (to the second position!)
+}
+
+void pvt_first() {
+  if (!in_pvt_sweep)
+    return;
+
+  if (pvt_index==pvt_count) {
+    in_pvt_sweep=0;
+    in_sweep=0;
+    pvt_index=0;
+
+    stepper1->sweeping=0;
+    stepper2->sweeping=0;
+    stepper3->sweeping=0;
+    stepper4->sweeping=0;
+    return;
+  }
+
+  unsigned long dur_usec=3.0 * SEC_TO_USEC; //sweep_snap_interval;
+
+  int pos1=pvt_table[(pvt_count-1)*4+0];
+  int pos2=pvt_table[(pvt_count-1)*4+1];
+  //pos2=-pos2; // move to "opposite" across center (but will reverse halfway)
+  int pos3=pvt_table[(pvt_count-1)*4+2];
+
+  int pos4=pvt_table[(pvt_count-1)*4+3];
+  if (pos4<HORIZ_SENTINEL) {
+    //stepper4->prepare_move( pos4*STEPPER4_STEPS_PER_UNIT,dur_usec, 1);
+    //stepper4->dur_extra=0.0;
+    //stepper4->start_move();
+
+    sweep_horizontal((signed long)pos4,dur_usec,1);
+  }
+
+  stepper2->pos_start=pos2; // what to reverse to after zero (original value)
+  sweep_to(
+       (signed long) pos1,
+       (signed long) -pos2, // (will turn around and go back to start)
+       (signed long) pos3,
+       dur_usec, MODE_PVT); 
+}
+
+void pvt_next() {
+  if (!in_pvt_sweep)
+    return;
+
+  unsigned long dur_usec=sweep_snap_interval;
+
+  int pos1=pvt_table[pvt_index*4+0];
+  int pos2=pvt_table[pvt_index*4+1];
+  int pos3=pvt_table[pvt_index*4+2];
+  int pos4=pvt_table[pvt_index*4+3];
+
+  if (pvt_index==pvt_count) {
+    in_pvt_sweep=0;
+    in_sweep=0;
+    pvt_index=0;
+
+    stepper1->sweeping=0;
+    stepper2->sweeping=0;
+    stepper3->sweeping=0;
+    stepper4->sweeping=0;
+    return;
+
+    Serial.print(micros());
+    Serial.print(" PVTX");
+  }
+
+  // Fake it by changing the avg speed of each motor
+  long int int1new=dur_usec/abs(pos1 - stepper1->pos_current);
+  stepper1->step_interval_us=int1new;
+
+  // for stepper2, switch direction at the halfway point
+  if ( (pvt_index)==int( pvt_count/2) ) {
+
+    stepper2->prepare_move( stepper2->pos_start, 0L, MODE_PVT); // This will reverse dir also and reset mypos_end, etc. //Reversing=mode 3
+    stepper2->start_move(); 
+
+#if 1
+  unsigned long now=micros();
+  Serial.print(now);
+  Serial.print(" PVTR ");
+  Serial.print(pos2);
+  Serial.print(" ");
+  Serial.println(stepper2->pos_current);
+#endif 
+  }
+  // Then update to correct speed for next interval
+  long int pos_delta = abs(pos2) - abs(stepper2->pos_current);
+  if (pos_delta==0)  {
+    stepper2->step_interval_us=dur_usec*10; // don't move at all during this interval (will be updatedd next time)
+    unsigned long now=micros();
+    Serial.print(now);
+    Serial.println(" PVT0");
+  } else {
+    long int int2new=dur_usec/abs(pos_delta) ;
+    stepper2->step_interval_us=int2new;
+  }
+
+  long int int3new=dur_usec/abs(pos3 - stepper3->pos_current);
+  stepper3->step_interval_us=int3new;
+
+  long int int4new=dur_usec/abs(pos4 - stepper4->pos_current);
+  stepper4->step_interval_us=int4new;
+
+#if VERBOSE
+  unsigned long now=micros();
+  Serial.print(now);
+  Serial.print(" PVTN ");
+  Serial.print(pvt_index);
+  Serial.print("/");
+  Serial.print(pvt_count);
+  Serial.print(":");
+  Serial.print(stepper1->pos_current);
+  Serial.print(",");
+  Serial.print(int1new);
+  Serial.print(",");
+  Serial.print(pos1);
+  Serial.print(",");
+  Serial.print(pos2);
+  Serial.print(",");
+  Serial.print(pos3);
+  Serial.print(",");
+  Serial.println(pos4);
+#endif
+
+  pvt_index++;
 }
 
 
+void movex(void) {
+  String param=strtok(str_input_buffer.c_str(),",");
+  signed long pos1=(signed long)param.toInt();
+  param=strtok(NULL,",");
+  signed long pos2=(signed long)param.toInt();
+  param=strtok(NULL,",");
+  signed long pos3=(signed long)param.toInt();
+  param=strtok(NULL,",");
+  signed long pos4=(signed long)param.toInt();
+  str_input_buffer=""; // Reset for next time
+
+  stepper1->prepare_move( pos1,2.0*1000000.0, 1); //2 second
+  stepper1->dur_extra=0.0; // move at normal_speed
+  //stepper1->table_counter=0; 
+  stepper1->start_move();
+
+  stepper2->prepare_move( pos2,2.0*1000000.0, 1); //2 second
+  stepper2->dur_extra=0.0; // move at normal_speed
+  //stepper2->table_counter=0; 
+  stepper2->start_move();
+  stepper2->pos_start = pos2;  // Need to save this for when we turn around
+
+  stepper3->prepare_move( pos3,2.0*1000000.0, 1); //2 second
+  stepper3->dur_extra=0.0; // move at normal_speed
+  stepper3->start_move();
+
+  if (pos4 <HORIZ_SENTINEL) {
+    stepper4->prepare_move( pos4,2.0*1000000.0, 1); //2 second
+    stepper4->dur_extra=0.0; // move at normal_speed
+    stepper4->start_move();
+  }
+
+#if VERBOSE2
+  unsigned long now=micros();
+  Serial.print(now);
+  Serial.print(" mvX");
+  //Serial.print(which_motor->num_motor);
+  Serial.print(":");
+  Serial.print(pos1);
+  Serial.print(",");
+  Serial.print(pos2);
+  Serial.print(",");
+  Serial.print(pos3);
+  Serial.print(",");
+  Serial.println(pos4);
+#endif
+
+  in_sweep=1;
+}
+
+void sweepx(StepperState* which_motor) {
+  String param=strtok(str_input_buffer.c_str(),",");
+  signed long pos_start=(signed long)param.toInt();
+  param=strtok(NULL,",");
+  signed long pos_end=(signed long)param.toInt();
+  param=strtok(NULL,",");
+  signed long duration_usec=(signed long)param.toInt();
+  param=strtok(NULL,",");
+  double dur_extra=param.toFloat();
+  param=strtok(NULL,",");
+  signed long table_offset=(signed long)param.toInt();
+  param=strtok(NULL,",");
+  signed long pos2=(signed long)param.toInt();
+  param=strtok(NULL,",");
+  double dur_extra2=param.toFloat();
+  param=strtok(NULL,",");
+  signed long pos3=(signed long)param.toInt();
+  
+  param=strtok(NULL,",");
+  signed long horiz_start=param.toInt();
+  param=strtok(NULL,",");
+  signed long horiz_end=param.toInt();
+  
+  Serial.print("sweepX@");
+  Serial.print(which_motor->num_motor);
+  Serial.print(":");
+  Serial.print(pos_start);
+  Serial.print(",");
+  Serial.print(pos_end);
+  Serial.print(",");
+  Serial.print(duration_usec);
+  Serial.print(",");
+  Serial.print(dur_extra,4);
+  Serial.print(",");
+  Serial.print(table_offset);
+  Serial.print(",");
+  Serial.print(pos2);
+  Serial.print(",");
+  Serial.print(dur_extra2,4);
+  Serial.print(",");
+  Serial.print(stepper3->pos_current);
+  Serial.print(",");
+  Serial.print(pos3);
+
+  Serial.print(",");
+  Serial.print(horiz_start);
+  Serial.print(",");
+  Serial.println(horiz_end);
+
+  stepper1->reset_state();
+  stepper1->table_counter=table_offset; // Start partway through the lookup table
+  stepper1->pos_current = pos_start;
+  stepper1->dur_extra = dur_extra;
+
+  stepper2->reset_state();
+  stepper2->pos_start = pos2;  // Need to save this for when we turn around
+  stepper2->pos_current = pos2;
+  stepper2->table_counter=-(STEPPER2_START-pos2);  // Index into the table. This one is one-to-one with step position
+  stepper2->dur_extra = dur_extra2;
+
+  // Stepper 4 horizontal
+  if (horiz_end < HORIZ_SENTINEL) {
+    stepper4->prepare_move( horiz_end,2.0*1000000.0, 1); //2 second
+    stepper4->dur_extra=0.0; // move at normal_speed
+    stepper4->start_move();
+  }      
+
+  // Stepper 3 is handled in here:
+  sweep_to(
+       (signed long) pos_end,
+       (signed long) STEPPER2_END, // (will turn around and go back to start)
+       (signed long) -pos3,
+      duration_usec, 2);
+}
+
 void sweep_to(signed long pos1, signed long pos2, signed long pos3, unsigned long duration, int mode) {
-  Serial.print("Sweep ");
+  sweep_continue(pos1, pos2, pos3, duration, mode);
+
+  sweep_start_time=millis();
+
+  step_trace_counter=0;
+  pos_curr=0;
+  sweep_snap_interval=(unsigned long)CAMERA_SNAP_INTERVAL_VERTICAL;
+  sweep_snap_time=sweep_start_time-sweep_snap_interval; // So it'll trigger immediately on entry
+  in_sweep=1; // so main loop knows we are sweeping
+}
+
+void sweep_continue(signed long pos1, signed long pos2, signed long pos3, unsigned long duration, int mode) {
+  unsigned long now=micros();
+  Serial.print(now);
+  Serial.print(" Sweep ");
   Serial.print(pos1);
   Serial.print(",");
   Serial.print(pos2);
@@ -430,17 +760,15 @@ void sweep_to(signed long pos1, signed long pos2, signed long pos3, unsigned lon
   stepper1->start_move();
   stepper2->start_move();
   stepper3->start_move();
-  sweep_start_time=millis();
-  
-  in_sweep=1; // so main loop knows we are sweeping
-  step_trace_counter=0;
-  pos_curr=0;
-  sweep_snap_interval=(unsigned long)CAMERA_SNAP_INTERVAL_VERTICAL;
-  sweep_snap_time=sweep_start_time-sweep_snap_interval; // So it'll trigger immediately on entry
 }
 
 void sweep_horizontal(signed long pos, unsigned long duration, int mode) {
-  Serial.println("Sweep H");
+  unsigned long now=micros();
+  Serial.print(now);
+  Serial.print(" SweepH ");
+  Serial.print(pos);
+  Serial.print(" ");
+  Serial.println(duration);
 
   stepper4->prepare_move( pos, duration, mode);
   stepper4->start_move();

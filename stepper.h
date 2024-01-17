@@ -7,6 +7,8 @@
 
 #define MODE_CALIBRATING 4 // Go until the Limit slams, then..
 #define MODE_CALIBRATING_BACK 5 // Reverse a smidgen to be off limit switch
+#define MODE_PVT 9 // Using a PVT table
+#define MODE_PVT_REVERSING 10 // During PVT, Motor 2 second-half phase
 #define STEPS_TO_REVERSE_OFF_LIMIT 100
 
 class StepperState
@@ -23,7 +25,7 @@ public:
 
   void stop_pulse(); // Immediately set pulse low
   void stop_move(unsigned int lower_pulse);  // Stop and cancel future movements.
-  virtual unsigned int get_next_interval()=0;
+  virtual unsigned long get_next_interval()=0;
 
   void read_limit();
   
@@ -36,11 +38,15 @@ public:
   unsigned int sweeping;	// Public for global access
   unsigned int steps_completed; // global for debugging
   float step_interval_us; // target value, when constant (not LUT)
+  float dur_extra; // multiplier for each delay in table (to expand short sections to longer times)
   word table_counter;		// Public for debugging, LUT
 
   int mode;
-  signed int pos_current;
-  signed int pos_start; // Pos at the sweep start (or, just off the limit switch)
+
+  // Positions:
+  signed long pos_current;
+  signed long pos_start; // Pos at the sweep start (or, just off the limit switch)
+  // Also used in the coronal motor to know where to go back to after zero. Changes in sweep
 
   //Limit switches:
   unsigned char limit_hit=0; 
@@ -60,10 +66,13 @@ public:
 
   int num_motor;
 
+protected:
+  signed int mydir; // -1 or +1
+
 private:
 
   // All durations in usec
-  unsigned int interval_next;
+  unsigned long interval_next;
   float error;
 
   unsigned long pulse_on_time;
@@ -75,20 +84,19 @@ private:
   int pin_limit;
 
   signed long mypos_end;
-  signed int mydir; // -1 or +1
 };
 
 class StepperLUT8 : public StepperState // 8 bit
 {
 public:
   StepperLUT8(int num_motor, int pin_go, int pin_dir, int pin_limit, signed long pos_start);
-  unsigned int get_next_interval();
+  unsigned long get_next_interval();
 };
 class StepperLUT16 : public StepperState // 16 bit
 {
 public:
   StepperLUT16(int num_motor, int pin_go, int pin_dir, int pin_limit, signed long pos_start);
-  unsigned int get_next_interval();
+  unsigned long get_next_interval();
 };
 
 // Create derived classes just to override read and write digital Fns
@@ -98,5 +106,5 @@ class StepperConstant : public StepperState
 {
 public:
   StepperConstant(int num_motor, int pin_go, int pin_dir, int pin_limit, signed long pos_start);
-  unsigned int get_next_interval();
+  unsigned long get_next_interval();
 };

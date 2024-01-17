@@ -18,7 +18,10 @@ StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir, int pin_li
 
   mypin_pulse = pin_pulse;
   mypin_dir = pin_dir;
+  mydir=1; // direction movement (pos+ now table) goes. Default "forward." prepare_move will change
+
   this->pin_limit = pin_limit;
+  this->dur_extra = 0.0;
   
   pinMode(mypin_pulse,OUTPUT);
   pinMode(mypin_dir,OUTPUT);
@@ -26,6 +29,7 @@ StepperState::StepperState(int num_motor, int pin_pulse, int pin_dir, int pin_li
   this->num_motor = num_motor;
 
   this->pos_start = pos_start;
+  this->table_counter=0;
 
   reset_state();
 }
@@ -85,12 +89,14 @@ void StepperState::prepare_move(signed long pos_end, unsigned long move_duration
 
   // TODO: be careful about rounding here!
   if (total_steps>0)
-    this->step_interval_us = (float(move_duration)/total_steps); // Force to be float
+    this->step_interval_us = (float(move_duration)/total_steps);
   else
     this->step_interval_us = 100; // Not sure what to do for 0.
 
 #if DEBUG_STEPPER
-  Serial.print("PREP ");
+  unsigned long now=micros();
+  Serial.print(now);
+  Serial.print(" PREP ");
   Serial.print(num_motor);
   Serial.print(" ");
   Serial.print(move_duration);
@@ -99,8 +105,12 @@ void StepperState::prepare_move(signed long pos_end, unsigned long move_duration
   Serial.print(" ");
   Serial.print(mypos_end);
   Serial.print(" ");
+  Serial.print(this->step_interval_us);
+  Serial.print(" ");
   Serial.print(interval_next);
   Serial.println(" ");
+
+  debug_output(4);
 #endif
 };
 
@@ -112,8 +122,14 @@ void StepperState::start_move() {
     high_time = MIN_PULSE_DUR_USEC; // Will set to low after this much time (minimum)
     pulse_on_time = micros(); // arm first movement: NOW!
 
-    interval_next = int( pgm_read_byte_near(table_ptr+0) );
-    //interval_next = int(step_interval_us); // start out with theoretical interval
+#if 0
+    if (num_motor>=3) { // TODO: fix!! linear motors use value as first one
+      interval_next=step_interval_us;
+    } else {
+      interval_next = get_next_interval() :(long) pgm_read_byte_near(table_ptr+table_counter) ;
+    }
+#endif //0
+    interval_next=get_next_interval();
     error=0.0;
     
     sweeping=1;
@@ -146,6 +162,8 @@ void StepperState::stop_move(unsigned int lower_pulse) {
   sweep_end_time=micros();
   debug_output(2);
 
+  Serial.print(sweep_end_time);
+  Serial.print(" ");
   Serial.print(num_motor);
   Serial.println(" stop");
 };
@@ -163,6 +181,11 @@ void StepperState::smooth_stop()
 
 #if DEBUG_STEPPER
 void StepperState::debug_output(unsigned long msg) {
+  unsigned long now=micros();
+    Serial.print(now);  
+    Serial.print(" ");
+    Serial.print(num_motor);  // Before was trying to pass in msg string
+    Serial.print(" ");
     Serial.print(msg);  // Before was trying to pass in msg string
     Serial.print(" ");
     Serial.print(mypin_pulse);
@@ -171,7 +194,13 @@ void StepperState::debug_output(unsigned long msg) {
     Serial.print(" ");
     Serial.print(mypos_end);
     Serial.print(" ");
-    Serial.println(step_interval_us);
+    Serial.print(step_interval_us);
+    Serial.print(" ");
+    Serial.print(dur_extra);
+    Serial.print(" ");
+    Serial.print(interval_next);
+    Serial.print(" ");
+    Serial.print(pos_start);
     Serial.print(" ");
     Serial.println(table_counter);
 }
@@ -179,8 +208,8 @@ void StepperState::debug_output(unsigned long msg) {
   void StepperState::debug_output(unsigned long msg) {}
 #endif
 
+// Not really used! Continuously checking with as problematic (due to delays, etc.)
 void StepperState::read_limit() {
-
   unsigned long now = micros();
   unsigned char lims_current = digitalRead(pin_limit); // TODO: Specify port
 
@@ -306,16 +335,24 @@ void StepperState::do_update() {
       
     // Decide whether to re-arm for another movement.
     // Since going single steps, testing for equality should be okay
-		if (pos_current == mypos_end) {
 
-      // If motor 2, that reverse once:
-      // Mode==0 is normal moves, so we don't want to do the reversal in that case
-      if ( (num_motor==2) && (pos_current==(signed int)STEPPER2_END) && (mode!=0) ) {
-          set_table_info(2); // Reverse direction from different lut
-          table_counter=0;   // Reset the position pointer, to the beginning of the reversed LUT
-          prepare_move( (signed long) STEPPER2_START, 0L, MODE_REVERSING); // This will reverse dir also and reset mypos_end, etc. //Reversing=mode 3
-          start_move();  
-      } else {
+    // First check special auto-reversal for Stepper2
+    // If motor 2, that reverse once:
+    // Mode==0 is normal moves, so we don't want to do the reversal in that case
+    // Comparison to zero is probably better than STEPPER2_END
+    // In PVT mode, don't want to reverse here
+    if ( (num_motor==2) && (pos_current==(signed int)STEPPER2_END) && (mode!=0) && (mode!=MODE_PVT) ) {
+        set_table_info(2); // Reverse direction from different lut
+        table_counter=0;   // Reset the position pointer, to the beginning of the reversed LUT
+        // This should be okay even when reversing.
+
+        prepare_move( (signed long) this->pos_start, 0L, MODE_REVERSING); // This will reverse dir also and reset mypos_end, etc. //Reversing=mode 3
+        start_move();  
+
+        debug_output(9);
+    } // normal motor. Finished?
+    else {
+      if (pos_current == mypos_end) {
         // done, at destination
         stop_move(1);
 
@@ -330,10 +367,17 @@ void StepperState::do_update() {
 StepperLUT8::StepperLUT8(int num_motor, int pin_pulse, int pin_dir, int pin_limit, signed long pos_start) : StepperState( num_motor, pin_pulse, pin_dir, pin_limit, pos_start )
 {}
 
-unsigned int StepperLUT8::get_next_interval() {
+unsigned long StepperLUT8::get_next_interval() {
 	unsigned long table_interval=pgm_read_byte_near(table_ptr + table_counter); // make ulong for precision in multiply below. Else overflow
     table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
-    table_counter++;
+    table_interval += dur_extra;
+
+    //if (mydir==-1 && table_counter==0) {
+    //stop_move(1); // shouldn't happen
+    //Serial.println("X");
+    //} else {
+      table_counter += mydir; // could be negative
+      //}
 
     if (table_counter > 6998) // TODO: get real length of table
       table_counter=0; // Neurotic check to not go past len of table 
@@ -343,10 +387,17 @@ unsigned int StepperLUT8::get_next_interval() {
 StepperLUT16::StepperLUT16(int num_motor, int pin_pulse, int pin_dir, int pin_limit, signed long pos_start) : StepperState( num_motor, pin_pulse, pin_dir, pin_limit, pos_start )
 {}
 
-unsigned int StepperLUT16::get_next_interval() {
-  unsigned long table_interval=pgm_read_word_near(table_ptr + 2*table_counter); // It's an 8bit pointer, so need to double 
-    table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
-    table_counter++;
+unsigned long StepperLUT16::get_next_interval() {
+  unsigned long table_interval=(unsigned long)pgm_read_word_near(table_ptr + 2*table_counter); // It's an 8bit pointer, so need to double 
+  table_interval = (( table_interval * table_scaler ) >> table_expander_exponent) + table_interval_min;
+  table_interval += dur_extra;
+
+    //if (mydir==-1 && table_counter==0) {
+    //stop_move(1); // shouldn't happen
+    //Serial.println("X");
+    //} else {
+    table_counter += 1; // always go forward through table (reversal logic is elsewhere)
+      //}
 
     if (table_counter > 6998) // TODO: get real length of table
       table_counter=0; // Neurotic check to not go past len of table 
@@ -356,6 +407,6 @@ unsigned int StepperLUT16::get_next_interval() {
 StepperConstant::StepperConstant(int num_motor, int pin_pulse, int pin_dir, int pin_limit, signed long pos_start) : StepperState( num_motor, pin_pulse, pin_dir, pin_limit, pos_start )
 {}
 
-unsigned int StepperConstant::get_next_interval() {
-	return int(step_interval_us);
+unsigned long StepperConstant::get_next_interval() {
+	return long(step_interval_us);
 }
