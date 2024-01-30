@@ -29,13 +29,13 @@
 // Zero/middle point for Stepper3 is zero
 
 // Where to begin the sweep. Button press left moves from "0" here
-#define STEPPER1_START (-32.5+10) 
+#define STEPPER1_START (-32.5+10.5) 
 #define STEPPER2_START -900
 #define STEPPER3_START 95
 #define STEPPER4_START -30
 
 // Where to sweep until. Button press right cases sweep until value is reached
-#define STEPPER1_END (32.5+10)
+#define STEPPER1_END (32.5+10.5)
 #define STEPPER2_END 0
 #define STEPPER3_END -95
 #define STEPPER4_END 30
@@ -58,15 +58,18 @@
 #define NUDGE_SMALL2 250
 #define NUDGE_LARGE2 500
 #define NUDGE_SMALL3 31
-#define NUDGE_LARGE3 123
+#define NUDGE_LARGE3 127
 #define NUDGE_SMALL4 31
 #define NUDGE_LARGE4 100
 
-#define STEP_BACK1 800 //500
-#define STEP_BACK2 4450 // 850 //450
+#define STEP_BACK1 550 //500
+#define STEP_BACK2 5250 // 850 //450
 #define STEP_BACK3 NUDGE_LARGE3
 
+#define HORIZ_SENTINEL 9999
+
 #define REAL_SYSTEM 1 // On the real hardware, this should be 1. If 0, we are probably developing/testing  w/o any hardware.
+// Not used too heavily. Mainly for failsafe panic buttons, and limit stuff.
 
 // These are shared between legacy.ino and this file
 // So that we can peek at the buttons
