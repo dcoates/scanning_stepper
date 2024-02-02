@@ -84,8 +84,8 @@ def get_pos_new(fraction):
     # quadratic to positions that Chloe found to work for a 3sec -20deg to 20deg scan.
     # Fraction: -1=-20deg, 0=0deg, +1=20deg, etc.
 
-    params=[423.83905613, 889.64685276,-2249.69896004]
-
+   # params=[423.83905613, 889.64685276,-2249.69896004]
+    params=[423.87, 889.49, -2199.6]
     # Get any arbitrary position as function of fraction of this scan (timewise)
     original_zero = 3.0/2.0 # Original time=3.0sec
     time = original_zero + fraction*3.0/2.0
