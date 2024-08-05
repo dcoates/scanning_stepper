@@ -31,14 +31,14 @@
 // Where to begin the sweep. Button press left moves from "0" here
 #define STEPPER1_START (-32.5+10.5) 
 #define STEPPER2_START -900
-#define STEPPER3_START 95
-#define STEPPER4_START -30
+#define STEPPER3_START 105 //95
+#define STEPPER4_START -20 // -30 is horizontal // -20 is diagonal
 
 // Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (32.5+10.5)
 #define STEPPER2_END 0
-#define STEPPER3_END -95
-#define STEPPER4_END 30
+#define STEPPER3_END -105 //-95
+#define STEPPER4_END 20 // 30 is horizontal // 20 is diagonal
 
 // Start some number of steps in the table
 #define TABLE_START1 250
@@ -58,7 +58,7 @@
 #define NUDGE_SMALL2 250
 #define NUDGE_LARGE2 500
 #define NUDGE_SMALL3 31
-#define NUDGE_LARGE3 127
+#define NUDGE_LARGE3 100
 #define NUDGE_SMALL4 31
 #define NUDGE_LARGE4 100
 
