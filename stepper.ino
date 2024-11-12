@@ -32,13 +32,15 @@
 #define STEPPER1_START (-32.5+10.5) 
 #define STEPPER2_START -900
 #define STEPPER3_START 105 //95
-#define STEPPER4_START -20 // -30 is horizontal // -20 is diagonal
+#define STEPPER4_START_HORIZ -30 // -30 is horizontal // -20 is diagonal
+#define STEPPER4_START_DIAG -20 // -30 is horizontal // -20 is diagonal
 
 // Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (32.5+10.5)
 #define STEPPER2_END 0
 #define STEPPER3_END -105 //-95
-#define STEPPER4_END 20 // 30 is horizontal // 20 is diagonal
+#define STEPPER4_END_HORIZ 30 // 30 is horizontal // 20 is diagonal
+#define STEPPER4_END_DIAG 20 // 30 is horizontal // 20 is diagonal
 
 // Start some number of steps in the table
 #define TABLE_START1 250
@@ -120,7 +122,9 @@ void setup() {
     stepper1 = new StepperLUT8(1, DRIVER1_PULSE, DRIVER1_DIR, limit1, (signed long)(STEPPER1_START*STEPPER1_STEPS_PER_UNIT));
     stepper2 = new StepperLUT16(2, DRIVER2_PULSE, DRIVER2_DIR, limit2, (signed long)(STEPPER2_START*STEPPER2_STEPS_PER_UNIT)); 
     stepper3 = new StepperConstant(3, DRIVER3_PULSE,DRIVER3_DIR, limit3, (signed long)(STEPPER3_START*STEPPER3_STEPS_PER_UNIT));
-    stepper4 = new StepperConstant(4, DRIVER4_PULSE,DRIVER4_DIR, limit3, (signed long)(STEPPER4_START*STEPPER4_STEPS_PER_UNIT));
+
+    // Hopefully the start pos is not used, because it needs to change for horiz vs. diagonal scan
+    stepper4 = new StepperConstant(4, DRIVER4_PULSE,DRIVER4_DIR, limit3, (signed long)(STEPPER4_START_HORIZ*STEPPER4_STEPS_PER_UNIT));
 
     in_sweep=0;
 }
@@ -212,7 +216,7 @@ int calibrate_new(StepperState* which_motor, signed long amount) {
   smooth_stop();
 
   if (!which_motor->limit_hit) { // If user hit panic button
-    Serial.println('Failsafe during calibrate');
+    Serial.println("Failsafe");
     return 0;
   }
 
@@ -256,12 +260,13 @@ void process_serial_commands() {
         else if (incomingByte=='f') {horiz_sweep_end(); }
         else if (incomingByte=='z') {horiz_sweep_zero(); }
 
-        else if (incomingByte=='K') {horiz_sweep_start(); sweep_to_start(); }
-        else if (incomingByte=='L') {horiz_sweep_end(); sweep_to_end(); }
+        // Diagonals, 2 directions:
+        else if (incomingByte=='K') {horiz_sweep_start_diag(); sweep_to_start(); }
+        else if (incomingByte=='L') {horiz_sweep_end_diag(); sweep_to_end(); }
         else if (incomingByte=='O') {horiz_sweep_zero(); sweep_to_zero(); }
 
-        else if (incomingByte=='k') {horiz_sweep_end(); sweep_to_start(); }
-        else if (incomingByte=='l') {horiz_sweep_start(); sweep_to_end(); }
+        else if (incomingByte=='k') {horiz_sweep_end_diag(); sweep_to_start(); }
+        else if (incomingByte=='l') {horiz_sweep_start_diag(); sweep_to_end(); }
         else if (incomingByte=='o') {horiz_sweep_zero(); sweep_to_zero(); }
 
         // Debug/info
@@ -503,13 +508,25 @@ void sweep_to_end() {
 
 void horiz_sweep_start() {
   sweep_horizontal(
-       (signed long) (STEPPER4_START*STEPPER4_STEPS_PER_UNIT),
+       (signed long) (STEPPER4_START_HORIZ*STEPPER4_STEPS_PER_UNIT),
        SWEEP_TIME_SEC_H*1000000.0,1);
 }
 
 void horiz_sweep_end() {
   sweep_horizontal(
-       (signed long) (STEPPER4_END*STEPPER4_STEPS_PER_UNIT),
+       (signed long) (STEPPER4_END_HORIZ*STEPPER4_STEPS_PER_UNIT),
+       SWEEP_TIME_SEC_H*1000000.0,2);
+}
+
+void horiz_sweep_start_diag() {
+  sweep_horizontal(
+       (signed long) (STEPPER4_START_DIAG*STEPPER4_STEPS_PER_UNIT),
+       SWEEP_TIME_SEC_H*1000000.0,1);
+}
+
+void horiz_sweep_end_diag() {
+  sweep_horizontal(
+       (signed long) (STEPPER4_END_DIAG*STEPPER4_STEPS_PER_UNIT),
        SWEEP_TIME_SEC_H*1000000.0,2);
 }
 

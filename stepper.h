@@ -40,6 +40,7 @@ public:
 
   int mode;
   signed int pos_current;
+
   signed int pos_start; // Pos at the sweep start (or, just off the limit switch)
 
   //Limit switches:
