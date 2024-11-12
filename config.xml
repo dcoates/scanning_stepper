@@ -4,13 +4,13 @@
     <baudrate>115200</baudrate>
     <camera_preview>1</camera_preview>
     <camera_update_rate_ms>100</camera_update_rate_ms>
-    <camera0_gain>18</camera0_gain>
-    <camera1_geometry>986x718+1233+229</camera1_geometry>
-    <camera0_geometry>891x731+91+341</camera0_geometry>
-    <camera0_exposure>1995.2623149688789</camera0_exposure>
+    <camera0_gain>12</camera0_gain>
+    <camera1_geometry>808x661+1421+586</camera1_geometry>
+    <camera0_geometry>891x731+969+173</camera0_geometry>
+    <camera0_exposure>10000.0</camera0_exposure>
     <camera0_exposure_log>1</camera0_exposure_log>
-    <camera1_exposure>19952.62314968879</camera1_exposure>
-    <camera1_gain>1</camera1_gain>
+    <camera1_exposure>794.3282347242813</camera1_exposure>
+    <camera1_gain>14</camera1_gain>
     <camera1_exposure_log>1</camera1_exposure_log>
     <camera_sweep_snap_rate_ms>20</camera_sweep_snap_rate_ms>
 </settings>
