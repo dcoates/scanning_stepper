@@ -102,23 +102,44 @@ def movD2_2():
     start_sweep('D2')
     ser.write(b'l'); # Last
 
-def start_sweep(str_which,path_results_base='results'):
-    path_sweepfiles=theApp.str_filename.get()
-    if not(os.path.exists(path_results_base)):
-        os.mkdir(path_results_base)
-    if not(os.path.exists(os.path.join(path_results_base,path_sweepfiles))):
-        os.mkdir(os.path.join(path_results_base,path_sweepfiles))
-    nSweep=0
-    while True:
-        fullpath=os.path.join(path_results_base,path_sweepfiles,'sweep_%02d'%nSweep )
-        if os.path.exists(fullpath):
-            nSweep += 1
-        else:
-            os.mkdir(fullpath)
-            break
+def mkdir_ifneeded(thepath):
+    sep1=thepath.find('/',1) # Skip very first character ("/" on linux)
+    while (sep1>0):
+        if not (os.path.exists(thepath[:sep1])):
+            print(thepath[:sep1])
+            os.mkdir(thepath[:sep1])
+        sep1=thepath.find('/',sep1+1)
 
-    filename0=os.path.join(fullpath,'sweep_cam%d_%s'%(0,str_which) )
-    filename1=os.path.join(fullpath,'sweep_cam%d_%s'%(1,str_which) )
+def make_unique_path(basename):
+    nsweep=0
+    while True:
+        fullpath=basename.replace('%NSWEEP',str(nsweep))
+        print( fullpath )
+        basepath = fullpath[0:fullpath.rfind('/')]
+        if os.path.exists(basepath):
+            nsweep += 1
+        else:
+            break
+    return fullpath
+
+def start_sweep(str_which,path_results_base='results'):
+    subj_id=theApp.str_filename.get()
+    #if not(os.path.exists(path_results_base)):
+        #os.mkdir(path_results_base)
+    #if not(os.path.exists(os.path.join(path_results_base,path_sweepfiles))):
+        #os.mkdir(os.path.join(path_results_base,path_sweepfiles))
+
+    base_path=SETTINGS['image_path']
+    base_path = base_path.replace('%DIRECTION',str_which)
+    base_path = base_path.replace('%SUBJ_ID',subj_id)
+    filename0=base_path.replace('%CAM',"0")
+    filename1=base_path.replace('%CAM',"1")
+    filename0=make_unique_path(filename0)
+    filename1=make_unique_path(filename1)
+    mkdir_ifneeded(filename0)
+    mkdir_ifneeded(filename1)
+
+    print( filename0, filename1 )
     theApp.cam0.start_sweep(filename0)
     theApp.cam1.start_sweep(filename1)
 

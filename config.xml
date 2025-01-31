@@ -13,4 +13,5 @@
     <camera1_gain>14</camera1_gain>
     <camera1_exposure_log>1</camera1_exposure_log>
     <camera_sweep_snap_rate_ms>20</camera_sweep_snap_rate_ms>
+    <image_path>/home/dcoates/test_wfs/what the%CAM/%NSWEEP/%SUBJ_ID/sweep_cam%CAM_%DIRECTION</image_path>
 </settings>
