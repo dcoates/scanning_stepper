@@ -124,6 +124,7 @@ def make_unique_path(basename):
 
 def start_sweep(str_which,path_results_base='results'):
     subj_id=theApp.str_filename.get()
+    cond_id=theApp.str_cond.get()
     #if not(os.path.exists(path_results_base)):
         #os.mkdir(path_results_base)
     #if not(os.path.exists(os.path.join(path_results_base,path_sweepfiles))):
@@ -132,6 +133,7 @@ def start_sweep(str_which,path_results_base='results'):
     base_path=SETTINGS['image_path']
     base_path = base_path.replace('%DIRECTION',str_which)
     base_path = base_path.replace('%SUBJ_ID',subj_id)
+    base_path = base_path.replace('%COND',cond_id)
     filename0=base_path.replace('%CAM',"0")
     filename1=base_path.replace('%CAM',"1")
     filename0=make_unique_path(filename0)
@@ -291,6 +293,10 @@ class App(Frame):
         self.str_filename.set("TEST")
         e_sweep_filename = ttk.Entry(f, textvariable=self.str_filename); e_sweep_filename.grid(row=11, column=6, padx=5, pady=5)
         b_reset_trigger = ttk.Button(f, text="Reset Cam. Trig", command=reset_trig); b_reset_trigger.grid(row=12, column=6, padx=5, pady=5)
+        self.condition_name = ttk.Label(f, text="Condition:", anchor=tkinter.E); self.condition_name.grid(row=10, column=5, padx=0, pady=5)
+        self.str_cond=StringVar(); 
+        self.str_cond.set("COND")
+        e_cond = ttk.Entry(f, textvariable=self.str_cond); e_cond.grid(row=10, column=6, padx=5, pady=5)
 
 ser=None
 
