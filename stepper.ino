@@ -32,8 +32,8 @@
 #define STEPPER1_START (-32.5+10.5) 
 #define STEPPER2_START -900
 #define STEPPER3_START 105 //95
-#define STEPPER4_START_HORIZ -30 // -30 is horizontal // -20 is diagonal
-#define STEPPER4_START_DIAG -20 // -30 is horizontal // -20 is diagonal
+#define STEPPER4_START_HORIZ -30 // 30 is for +/35 as of 1/14/2025// -30 is horizontal // -20 is diagonal
+#define STEPPER4_START_DIAG -12 // 12 is for +/20 as of 1/14/2025 // -30 is horizontal // -20 is diagonal
 
 // Where to sweep until. Button press right cases sweep until value is reached
 #define STEPPER1_END (32.5+10.5)
